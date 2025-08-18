@@ -31,8 +31,9 @@ const Game = () => {
       .order("created_at", { ascending: true });
 
     if (error) {
-      showError("Could not fetch issues.");
-      console.error(error);
+      const errorMessage = `Could not fetch issues: ${error.message}`;
+      showError(errorMessage);
+      console.error("Supabase fetch error:", error);
     } else {
       setIssues(data);
     }
