@@ -6,6 +6,8 @@ import { CreateIssueForm } from '@/components/CreateIssueForm';
 import { IssueList } from '@/components/IssueList';
 import { Header } from '@/components/Header';
 import { VotingSection } from '@/components/VotingSection';
+import { SessionControls } from '@/components/SessionControls';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export interface Issue {
   id: number;
@@ -23,6 +25,7 @@ const Game = () => {
 
   const fetchIssues = async () => {
     if (!gameId) return;
+    setLoading(true);
     const { data, error } = await supabase
       .from('issues')
       .select('*')
@@ -64,6 +67,7 @@ const Game = () => {
   const handleSetCurrentIssue = async (issueId: number) => {
     if (!gameId || currentIssue?.id === issueId) return;
 
+    // Set all other issues to not be voting
     const { error: clearError } = await supabase
       .from('issues')
       .update({ is_voting: false })
@@ -74,6 +78,18 @@ const Game = () => {
       return;
     }
 
+    // Clear any previous votes for the issue to ensure a fresh start
+    const { error: deleteVotesError } = await supabase
+      .from('votes')
+      .delete()
+      .eq('issue_id', issueId);
+
+    if (deleteVotesError) {
+        showError("Failed to clear previous votes for the new voting round.");
+        return;
+    }
+
+    // Set the selected issue as the one being voted on
     const { error: setError } = await supabase
       .from('issues')
       .update({ is_voting: true, votes_revealed: false })
@@ -84,12 +100,20 @@ const Game = () => {
     }
   };
 
-  if (loading) {
-    return <div>Loading game...</div>
+  if (loading && issues.length === 0) {
+    return (
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+            <p>Loading game...</p>
+        </div>
+    )
   }
 
   if (!gameId) {
-    return <div>Game ID is missing.</div>;
+    return (
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+            <p>Game ID is missing.</p>
+        </div>
+    );
   }
 
   return (
@@ -105,6 +129,17 @@ const Game = () => {
             currentIssueId={currentIssue?.id}
             onSetCurrentIssue={handleSetCurrentIssue}
           />
+          <Card className="border-destructive">
+            <CardHeader>
+                <CardTitle>Danger Zone</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <p className="text-sm text-muted-foreground mb-4">
+                    This will permanently delete all issues and votes for this game session. This action cannot be undone.
+                </p>
+                <SessionControls gameId={gameId} />
+            </CardContent>
+          </Card>
         </div>
       </main>
     </div>
