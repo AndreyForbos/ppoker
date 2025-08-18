@@ -2,13 +2,14 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Issue } from '@/pages/Game';
+import { Issue, Participant } from '@/pages/Game';
 import { useUser } from '@/hooks/useUser';
 import { showError, showSuccess } from '@/utils/toast';
 import { Check } from 'lucide-react';
 
 interface VotingSectionProps {
   currentIssue: Issue | undefined;
+  participants: Participant[];
 }
 
 interface Vote {
@@ -18,8 +19,9 @@ interface Vote {
 
 const VOTE_OPTIONS = ['1', '2', '3', '5', '8', '13', '?', '☕'];
 
-export const VotingSection = ({ currentIssue }: VotingSectionProps) => {
-  const userId = useUser();
+export const VotingSection = ({ currentIssue, participants }: VotingSectionProps) => {
+  const { user } = useUser();
+  const userId = user?.id;
   const [votes, setVotes] = useState<Vote[]>([]);
   const [userVote, setUserVote] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -169,18 +171,20 @@ export const VotingSection = ({ currentIssue }: VotingSectionProps) => {
         {!currentIssue.votes_revealed ? (
           <>
             <div>
-              <p className="mb-2 text-sm font-medium">Participants ({votes.length} voted)</p>
+              <p className="mb-2 text-sm font-medium">Participants ({participants.length} in room, {votes.length} voted)</p>
               <div className="flex flex-wrap gap-3 min-h-[7rem]">
-                {votes.map((vote) => (
-                  <div
-                    key={vote.user_id}
-                    className="bg-secondary rounded-lg w-20 h-24 flex items-center justify-center border-2 border-dashed"
-                  >
-                    {vote.user_id === userId && (
-                      <Check className="h-8 w-8 text-primary" />
-                    )}
-                  </div>
-                ))}
+                {participants.map((participant) => {
+                  const hasVoted = votes.some(v => v.user_id === participant.id);
+                  return (
+                    <div
+                      key={participant.id}
+                      className={`rounded-lg w-20 h-24 flex flex-col items-center justify-center p-2 text-center border-2 transition-all ${hasVoted ? 'bg-secondary border-dashed border-primary' : 'bg-gray-100 border-gray-300'}`}
+                    >
+                      {hasVoted && <Check className="h-8 w-8 text-primary mb-1" />}
+                      <span className="text-sm font-medium truncate w-full">{participant.name}</span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
             <div>
@@ -204,12 +208,18 @@ export const VotingSection = ({ currentIssue }: VotingSectionProps) => {
           <div>
             <p className="mb-4 text-sm text-muted-foreground">Votes:</p>
             {votes.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                    {votes.map((vote) => (
-                        <div key={vote.user_id} className="bg-primary text-primary-foreground rounded-md w-12 h-12 flex items-center justify-center text-lg font-bold">
-                            {vote.vote_value}
+                <div className="flex flex-wrap gap-4">
+                    {votes.map((vote) => {
+                      const voter = participants.find(p => p.id === vote.user_id);
+                      return (
+                        <div key={vote.user_id} className="flex flex-col items-center">
+                            <div className="bg-primary text-primary-foreground rounded-md w-12 h-12 flex items-center justify-center text-lg font-bold">
+                                {vote.vote_value}
+                            </div>
+                            <span className="text-xs mt-1 text-muted-foreground">{voter?.name || '...'}</span>
                         </div>
-                    ))}
+                      )
+                    })}
                 </div>
             ) : (
                 <p className="text-muted-foreground">No votes were cast.</p>

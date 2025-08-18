@@ -8,6 +8,8 @@ import { Header } from '@/components/Header';
 import { VotingSection } from '@/components/VotingSection';
 import { SessionControls } from '@/components/SessionControls';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useUser } from '@/hooks/useUser';
+import { UserSetup } from '@/components/UserSetup';
 
 export interface Issue {
   id: number;
@@ -17,11 +19,18 @@ export interface Issue {
   votes_revealed: boolean;
 }
 
+export interface Participant {
+  id: string;
+  name: string;
+}
+
 const Game = () => {
   const { gameId } = useParams<{ gameId: string }>();
   const [issues, setIssues] = useState<Issue[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentIssue, setCurrentIssue] = useState<Issue | undefined>(undefined);
+  const { user, setUserName } = useUser();
+  const [participants, setParticipants] = useState<Participant[]>([]);
 
   const fetchIssues = async () => {
     if (!gameId) return;
@@ -64,10 +73,42 @@ const Game = () => {
     };
   }, [gameId]);
 
+  useEffect(() => {
+    if (!gameId || !user?.id || !user.name) return;
+
+    const channel = supabase.channel(`game:${gameId}`, {
+      config: {
+        presence: {
+          key: user.id,
+        },
+      },
+    });
+
+    channel
+      .on('presence', { event: 'sync' }, () => {
+        const presenceState = channel.presenceState();
+        const newParticipants: Participant[] = [];
+        for (const key in presenceState) {
+          // @ts-ignore
+          const presences = presenceState[key] as { name: string }[];
+          newParticipants.push({ id: key, name: presences[0].name });
+        }
+        setParticipants(newParticipants);
+      })
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          await channel.track({ name: user.name });
+        }
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [gameId, user]);
+
   const handleSetCurrentIssue = async (issueId: number) => {
     if (!gameId || currentIssue?.id === issueId) return;
 
-    // Set all other issues to not be voting
     const { error: clearError } = await supabase
       .from('issues')
       .update({ is_voting: false })
@@ -78,7 +119,6 @@ const Game = () => {
       return;
     }
 
-    // Clear any previous votes for the issue to ensure a fresh start
     const { error: deleteVotesError } = await supabase
       .from('votes')
       .delete()
@@ -89,7 +129,6 @@ const Game = () => {
         return;
     }
 
-    // Set the selected issue as the one being voted on
     const { error: setError } = await supabase
       .from('issues')
       .update({ is_voting: true, votes_revealed: false })
@@ -99,6 +138,22 @@ const Game = () => {
       showError("Failed to start voting on issue.");
     }
   };
+
+  const handleNameSet = (name: string) => {
+    setUserName(name);
+  };
+
+  if (!user) {
+    return (
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+            <p>Loading user...</p>
+        </div>
+    )
+  }
+
+  if (!user.name) {
+    return <UserSetup onNameSet={handleNameSet} />;
+  }
 
   if (loading && issues.length === 0) {
     return (
@@ -121,7 +176,7 @@ const Game = () => {
       <Header gameId={gameId} />
       <main className="p-4 md:p-8 max-w-4xl mx-auto">
         <div className="space-y-8">
-          <VotingSection currentIssue={currentIssue} />
+          <VotingSection currentIssue={currentIssue} participants={participants} />
           <CreateIssueForm gameId={gameId} />
           <IssueList 
             issues={issues} 
