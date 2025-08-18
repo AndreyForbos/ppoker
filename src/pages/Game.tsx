@@ -10,6 +10,7 @@ import { SessionControls } from '@/components/SessionControls';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useUser } from '@/hooks/useUser';
 import { UserSetup } from '@/components/UserSetup';
+import { ParticipantsList } from '@/components/ParticipantsList';
 
 export interface Issue {
   id: number;
@@ -200,28 +201,33 @@ const Game = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header gameId={gameId} />
-      <main className="p-4 md:p-8 max-w-4xl mx-auto">
-        <div className="space-y-8">
-          <VotingSection currentIssue={currentIssue} participants={participants} />
-          <CreateIssueForm gameId={gameId} />
-          <IssueList 
-            issues={issues} 
-            loading={loading}
-            currentIssueId={currentIssue?.id}
-            onSetCurrentIssue={handleSetCurrentIssue}
-            onDeleteIssue={handleDeleteIssue}
-          />
-          <Card className="border-destructive">
-            <CardHeader>
-                <CardTitle>Danger Zone</CardTitle>
-            </CardHeader>
-            <CardContent>
-                <p className="text-sm text-muted-foreground mb-4">
-                    This will permanently delete all issues and votes for this game session. This action cannot be undone.
-                </p>
-                <SessionControls gameId={gameId} />
-            </CardContent>
-          </Card>
+      <main className="p-4 md:p-8 max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+          <div className="lg:col-span-3 space-y-8">
+            <VotingSection currentIssue={currentIssue} participants={participants} />
+          </div>
+          <div className="lg:col-span-2 space-y-8">
+            <ParticipantsList participants={participants} />
+            <CreateIssueForm gameId={gameId} />
+            <IssueList 
+              issues={issues} 
+              loading={loading}
+              currentIssueId={currentIssue?.id}
+              onSetCurrentIssue={handleSetCurrentIssue}
+              onDeleteIssue={handleDeleteIssue}
+            />
+            <Card className="border-destructive">
+              <CardHeader>
+                  <CardTitle>Danger Zone</CardTitle>
+              </CardHeader>
+              <CardContent>
+                  <p className="text-sm text-muted-foreground mb-4">
+                      This will permanently delete all issues and votes for this game session. This action cannot be undone.
+                  </p>
+                  <SessionControls gameId={gameId} />
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </main>
     </div>
