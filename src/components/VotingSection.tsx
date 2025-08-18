@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Issue, Participant } from '@/pages/Game';
 import { useUser } from '@/hooks/useUser';
 import { showError, showSuccess } from '@/utils/toast';
@@ -169,57 +168,71 @@ export const VotingSection = ({ currentIssue, participants }: VotingSectionProps
 
   if (!currentIssue) {
     return (
-      <Card className="bg-gray-50 border-dashed">
-        <CardContent className="pt-6 text-center text-muted-foreground">
-          <p>Select an issue from the list below to start voting.</p>
-        </CardContent>
-      </Card>
+      <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
+        <div className="bg-card p-8 rounded-lg shadow-lg max-w-md">
+          <h3 className="text-xl font-semibold mb-2">Feeling lonely? 😔</h3>
+          <p className="text-muted-foreground mb-4">Invite players to join the game!</p>
+          <p className="text-muted-foreground">Once you have issues, select one from the sidebar to start voting.</p>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Voting on: <span className="font-normal">{currentIssue.title}</span></CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div>
-          <p className="mb-4 text-sm font-medium">
-            {currentIssue.votes_revealed ? 'Results' : `Participants (${participants.length} in room, ${votes.length} voted)`}
-          </p>
-          <div className="flex flex-wrap gap-4 min-h-[8.5rem]">
-            {participants.map((participant) => {
-              const vote = votes.find(v => v.user_id === participant.id);
-              const hasVoted = !!vote;
+    <div className="flex-1 flex flex-col p-4 md:p-8">
+      <div className="text-center mb-8">
+        <p className="text-muted-foreground">Voting on</p>
+        <h2 className="text-3xl font-bold">{currentIssue.title}</h2>
+      </div>
 
-              return (
-                <div key={participant.id} className="flex flex-col items-center w-20">
-                  {currentIssue.votes_revealed ? (
-                    <div className="bg-primary text-primary-foreground rounded-lg w-full h-24 flex items-center justify-center text-2xl font-bold shadow-md">
-                      {vote ? vote.vote_value : <span className="text-lg text-primary-foreground/70">N/A</span>}
+      <div className="flex-1 flex items-center justify-center">
+        <div className="flex flex-wrap gap-8 justify-center">
+          {participants.map((participant) => {
+            const vote = votes.find(v => v.user_id === participant.id);
+            const hasVoted = !!vote;
+
+            return (
+              <div key={participant.id} className="flex flex-col items-center w-28">
+                {currentIssue.votes_revealed ? (
+                  <div className="bg-primary text-primary-foreground rounded-lg w-20 h-28 flex items-center justify-center text-3xl font-bold shadow-lg">
+                    <div>
+                      {vote ? vote.vote_value : <span className="text-xl text-primary-foreground/70">?</span>}
                     </div>
-                  ) : (
-                    <div className={`rounded-lg w-full h-24 flex items-center justify-center border-2 transition-all ${hasVoted ? 'bg-secondary border-primary border-dashed' : 'bg-gray-100 border-gray-300'}`}>
-                      {hasVoted && <Check className="h-8 w-8 text-primary" />}
-                    </div>
-                  )}
-                  <span className="text-sm mt-2 font-medium truncate w-full text-center">{participant.name}</span>
-                </div>
-              );
-            })}
-          </div>
+                  </div>
+                ) : (
+                  <div className={`rounded-lg w-20 h-28 flex items-center justify-center border-2 transition-all ${hasVoted ? 'bg-green-500/20 border-green-500' : 'bg-card border-border'}`}>
+                    {hasVoted && <Check className="h-10 w-10 text-green-500" />}
+                  </div>
+                )}
+                <span className="text-md mt-3 font-medium truncate w-full text-center">{participant.name}</span>
+              </div>
+            );
+          })}
         </div>
+      </div>
 
-        {!currentIssue.votes_revealed ? (
-          <div>
-            <p className="mb-4 text-sm text-muted-foreground">Choose your estimate:</p>
-            <div className="grid grid-cols-4 md:grid-cols-8 gap-2">
+      <div className="mt-8">
+        {currentIssue.votes_revealed ? (
+          <div className="text-center space-y-4">
+            <p className="text-sm font-medium">Set Final Estimate</p>
+            <div className="flex flex-wrap gap-2 justify-center">
+              {VOTE_OPTIONS.map((value) => (
+                <Button key={value} variant="outline" onClick={() => handleSetFinalVote(value)}>
+                  {value}
+                </Button>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="text-center">
+            <p className="mb-4 text-lg text-muted-foreground">Pick your card!</p>
+            <div className="flex justify-center flex-wrap gap-2">
               {VOTE_OPTIONS.map((value) => (
                 <Button
                   key={value}
                   variant={userVote === value ? 'default' : 'outline'}
                   onClick={() => handleVote(value)}
-                  className="aspect-square text-lg font-bold"
+                  className="w-12 h-16 text-xl font-bold"
                   disabled={isSubmitting}
                 >
                   {value}
@@ -227,31 +240,16 @@ export const VotingSection = ({ currentIssue, participants }: VotingSectionProps
               ))}
             </div>
           </div>
-        ) : (
-          <div className="pt-6 mt-6 border-t">
-            <p className="mb-4 text-sm font-medium">Set Final Estimate</p>
-            <div className="flex flex-wrap gap-2">
-              {VOTE_OPTIONS.map((value) => (
-                <Button
-                  key={value}
-                  variant="outline"
-                  onClick={() => handleSetFinalVote(value)}
-                >
-                  {value}
-                </Button>
-              ))}
-            </div>
-          </div>
         )}
-
-        <div className="flex gap-2 pt-4 border-t">
+        
+        <div className="flex justify-center gap-4 pt-6 mt-6 border-t border-border">
             {!currentIssue.votes_revealed ? (
-                <Button onClick={handleRevealVotes}>Reveal Votes</Button>
+                <Button onClick={handleRevealVotes} size="lg">Reveal Votes</Button>
             ) : (
-                <Button onClick={handleResetVoting}>Vote Again</Button>
+                <Button onClick={handleResetVoting} variant="secondary">Vote Again</Button>
             )}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 };

@@ -10,7 +10,6 @@ import { SessionControls } from '@/components/SessionControls';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useUser } from '@/hooks/useUser';
 import { UserSetup } from '@/components/UserSetup';
-import { ParticipantsList } from '@/components/ParticipantsList';
 
 export interface Issue {
   id: number;
@@ -199,15 +198,14 @@ const Game = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="h-screen w-screen flex flex-col bg-background text-foreground">
       <Header gameId={gameId} />
-      <main className="p-4 md:p-8 max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-          <div className="lg:col-span-3 space-y-8">
-            <VotingSection currentIssue={currentIssue} participants={participants} />
-          </div>
-          <div className="lg:col-span-2 space-y-8">
-            <ParticipantsList participants={participants} />
+      <div className="flex flex-1 overflow-hidden">
+        <main className="flex-1 flex flex-col">
+          <VotingSection currentIssue={currentIssue} participants={participants} />
+        </main>
+        <aside className="hidden lg:flex w-full lg:w-[350px] xl:w-[400px] bg-[#1e2332] border-l border-border p-6 flex-col flex-shrink-0">
+          <div className="flex-1 space-y-6 overflow-y-auto">
             <CreateIssueForm gameId={gameId} />
             <IssueList 
               issues={issues} 
@@ -216,20 +214,22 @@ const Game = () => {
               onSetCurrentIssue={handleSetCurrentIssue}
               onDeleteIssue={handleDeleteIssue}
             />
-            <Card className="border-destructive">
-              <CardHeader>
-                  <CardTitle>Danger Zone</CardTitle>
+          </div>
+          <div className="flex-shrink-0 mt-6">
+            <Card className="border-destructive bg-transparent shadow-none">
+              <CardHeader className="p-4">
+                  <CardTitle className="text-base">Danger Zone</CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-4 pt-0">
                   <p className="text-sm text-muted-foreground mb-4">
-                      This will permanently delete all issues and votes for this game session. This action cannot be undone.
+                      Permanently delete all issues and votes for this game.
                   </p>
                   <SessionControls gameId={gameId} />
               </CardContent>
             </Card>
           </div>
-        </div>
-      </main>
+        </aside>
+      </div>
     </div>
   );
 };
