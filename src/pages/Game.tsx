@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
-import { showError } from '@/utils/toast';
+import { showError, showSuccess } from '@/utils/toast';
 import { CreateIssueForm } from '@/components/CreateIssueForm';
 import { IssueList } from '@/components/IssueList';
 import { Header } from '@/components/Header';
@@ -140,6 +140,31 @@ const Game = () => {
     }
   };
 
+  const handleDeleteIssue = async (issueId: number) => {
+    const { error: votesError } = await supabase
+      .from('votes')
+      .delete()
+      .eq('issue_id', issueId);
+
+    if (votesError) {
+      console.error('Error deleting votes:', votesError);
+      showError('Failed to delete associated votes.');
+      return;
+    }
+
+    const { error: issueError } = await supabase
+      .from('issues')
+      .delete()
+      .eq('id', issueId);
+
+    if (issueError) {
+      console.error('Error deleting issue:', issueError);
+      showError('Failed to delete the issue.');
+    } else {
+      showSuccess('Issue deleted successfully.');
+    }
+  };
+
   const handleNameSet = (name: string) => {
     setUserName(name);
   };
@@ -184,6 +209,7 @@ const Game = () => {
             loading={loading}
             currentIssueId={currentIssue?.id}
             onSetCurrentIssue={handleSetCurrentIssue}
+            onDeleteIssue={handleDeleteIssue}
           />
           <Card className="border-destructive">
             <CardHeader>
