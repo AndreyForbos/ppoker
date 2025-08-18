@@ -13,9 +13,10 @@ import { showSuccess } from "@/utils/toast";
 
 interface HeaderProps {
   playerName?: string | null;
+  onLeave: () => void;
 }
 
-export const Header = ({ playerName }: HeaderProps) => {
+export const Header = ({ playerName, onLeave }: HeaderProps) => {
   const handleInvite = () => {
     navigator.clipboard.writeText(window.location.href);
     showSuccess("Game URL copied to clipboard!");
@@ -55,7 +56,7 @@ export const Header = ({ playerName }: HeaderProps) => {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>Log out</DropdownMenuItem>
+                <DropdownMenuItem onClick={onLeave}>Log out</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>

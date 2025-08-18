@@ -3,12 +3,16 @@ import { PokerCard } from "./PokerCard";
 
 const cardValues = ["0", "1", "2", "3", "5", "8", "13", "21", "?"];
 
-export const CardDeck = () => {
+interface CardDeckProps {
+  onVote: (value: string) => void;
+}
+
+export const CardDeck = ({ onVote }: CardDeckProps) => {
   const [selectedCard, setSelectedCard] = useState<string | null>(null);
 
   const handleSelectCard = (value: string) => {
     setSelectedCard(value);
-    // In the future, we'll emit a vote event here.
+    onVote(value);
   };
 
   return (
