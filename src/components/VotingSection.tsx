@@ -185,9 +185,9 @@ export const VotingSection = ({ currentIssue, participants, votes }: VotingSecti
         
         <div className="flex justify-center gap-4 pt-6 mt-6 border-t border-border">
             {!currentIssue.votes_revealed ? (
-                <Button onClick={handleRevealVotes} size="lg">Show Votes</Button>
+                <Button onClick={handleRevealVotes} size="lg">Reveal Cards</Button>
             ) : (
-                <Button onClick={handleResetVoting} variant="secondary">Clear Votes</Button>
+                <Button onClick={handleResetVoting} variant="secondary">New Voting</Button>
             )}
         </div>
       </div>

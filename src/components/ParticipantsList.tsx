@@ -1,6 +1,8 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Participant, Vote } from '@/pages/Game';
-import { CheckCircle2 } from 'lucide-react';
+import { CheckCircle2, Copy } from 'lucide-react';
+import { Button } from './ui/button';
+import { showSuccess } from '@/utils/toast';
 
 interface ParticipantsListProps {
   participants: Participant[];
@@ -10,10 +12,15 @@ interface ParticipantsListProps {
 export const ParticipantsList = ({ participants, votes }: ParticipantsListProps) => {
   const votedParticipantIds = new Set(votes.map(v => v.user_id));
 
+  const handleCopyInvite = () => {
+    navigator.clipboard.writeText(window.location.href);
+    showSuccess("Invite link copied to clipboard!");
+  };
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Participants ({participants.length})</CardTitle>
+        <CardTitle>Players ({votedParticipantIds.size}/{participants.length})</CardTitle>
       </CardHeader>
       <CardContent>
         {participants.length === 0 ? (
@@ -31,6 +38,12 @@ export const ParticipantsList = ({ participants, votes }: ParticipantsListProps)
           </ul>
         )}
       </CardContent>
+      <CardFooter>
+        <Button variant="outline" className="w-full" onClick={handleCopyInvite}>
+          <Copy className="h-4 w-4 mr-2" />
+          Copy Invite Link
+        </Button>
+      </CardFooter>
     </Card>
   );
 };
