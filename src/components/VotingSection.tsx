@@ -183,75 +183,63 @@ export const VotingSection = ({ currentIssue, participants }: VotingSectionProps
         <CardTitle>Voting on: <span className="font-normal">{currentIssue.title}</span></CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        {!currentIssue.votes_revealed ? (
-          <>
-            <div>
-              <p className="mb-2 text-sm font-medium">Participants ({participants.length} in room, {votes.length} voted)</p>
-              <div className="flex flex-wrap gap-3 min-h-[7rem]">
-                {participants.map((participant) => {
-                  const hasVoted = votes.some(v => v.user_id === participant.id);
-                  return (
-                    <div
-                      key={participant.id}
-                      className={`rounded-lg w-20 h-24 flex flex-col items-center justify-center p-2 text-center border-2 transition-all ${hasVoted ? 'bg-secondary border-dashed border-primary' : 'bg-gray-100 border-gray-300'}`}
-                    >
-                      {hasVoted && <Check className="h-8 w-8 text-primary mb-1" />}
-                      <span className="text-sm font-medium truncate w-full">{participant.name}</span>
+        <div>
+          <p className="mb-4 text-sm font-medium">
+            {currentIssue.votes_revealed ? 'Results' : `Participants (${participants.length} in room, ${votes.length} voted)`}
+          </p>
+          <div className="flex flex-wrap gap-4 min-h-[8.5rem]">
+            {participants.map((participant) => {
+              const vote = votes.find(v => v.user_id === participant.id);
+              const hasVoted = !!vote;
+
+              return (
+                <div key={participant.id} className="flex flex-col items-center w-20">
+                  {currentIssue.votes_revealed ? (
+                    <div className="bg-primary text-primary-foreground rounded-lg w-full h-24 flex items-center justify-center text-2xl font-bold shadow-md">
+                      {vote ? vote.vote_value : <span className="text-lg text-primary-foreground/70">N/A</span>}
                     </div>
-                  );
-                })}
-              </div>
-            </div>
-            <div>
-              <p className="mb-4 text-sm text-muted-foreground">Choose your estimate:</p>
-              <div className="grid grid-cols-4 md:grid-cols-8 gap-2">
-                {VOTE_OPTIONS.map((value) => (
-                  <Button
-                    key={value}
-                    variant={userVote === value ? 'default' : 'outline'}
-                    onClick={() => handleVote(value)}
-                    className="aspect-square text-lg font-bold"
-                    disabled={isSubmitting}
-                  >
-                    {value}
-                  </Button>
-                ))}
-              </div>
-            </div>
-          </>
-        ) : (
-          <div>
-            <p className="mb-4 text-sm text-muted-foreground">Votes:</p>
-            {votes.length > 0 ? (
-                <div className="flex flex-wrap gap-4">
-                    {votes.map((vote) => {
-                      const voter = participants.find(p => p.id === vote.user_id);
-                      return (
-                        <div key={vote.user_id} className="flex flex-col items-center">
-                            <div className="bg-primary text-primary-foreground rounded-md w-12 h-12 flex items-center justify-center text-lg font-bold">
-                                {vote.vote_value}
-                            </div>
-                            <span className="text-xs mt-1 text-muted-foreground">{voter?.name || '...'}</span>
-                        </div>
-                      )
-                    })}
+                  ) : (
+                    <div className={`rounded-lg w-full h-24 flex items-center justify-center border-2 transition-all ${hasVoted ? 'bg-secondary border-primary border-dashed' : 'bg-gray-100 border-gray-300'}`}>
+                      {hasVoted && <Check className="h-8 w-8 text-primary" />}
+                    </div>
+                  )}
+                  <span className="text-sm mt-2 font-medium truncate w-full text-center">{participant.name}</span>
                 </div>
-            ) : (
-                <p className="text-muted-foreground">No votes were cast.</p>
-            )}
-            <div className="pt-6 mt-6 border-t">
-              <p className="mb-4 text-sm font-medium">Set Final Estimate</p>
-              <div className="flex flex-wrap gap-2">
-                {VOTE_OPTIONS.map((value) => (
-                  <Button
-                    key={value}
-                    variant="outline"
-                    onClick={() => handleSetFinalVote(value)}
-                  >
-                    {value}
-                  </Button>
-                ))}
-              </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {!currentIssue.votes_revealed ? (
+          <div>
+            <p className="mb-4 text-sm text-muted-foreground">Choose your estimate:</p>
+            <div className="grid grid-cols-4 md:grid-cols-8 gap-2">
+              {VOTE_OPTIONS.map((value) => (
+                <Button
+                  key={value}
+                  variant={userVote === value ? 'default' : 'outline'}
+                  onClick={() => handleVote(value)}
+                  className="aspect-square text-lg font-bold"
+                  disabled={isSubmitting}
+                >
+                  {value}
+                </Button>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="pt-6 mt-6 border-t">
+            <p className="mb-4 text-sm font-medium">Set Final Estimate</p>
+            <div className="flex flex-wrap gap-2">
+              {VOTE_OPTIONS.map((value) => (
+                <Button
+                  key={value}
+                  variant="outline"
+                  onClick={() => handleSetFinalVote(value)}
+                >
+                  {value}
+                </Button>
+              ))}
             </div>
           </div>
         )}
