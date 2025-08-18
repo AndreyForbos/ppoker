@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
-import { Issue, Participant } from '@/pages/Game';
+import { Issue, Participant, Vote } from '@/pages/Game';
 import { useUser } from '@/hooks/useUser';
 import { showError, showSuccess } from '@/utils/toast';
 import { Check } from 'lucide-react';
@@ -9,85 +9,24 @@ import { Check } from 'lucide-react';
 interface VotingSectionProps {
   currentIssue: Issue | undefined;
   participants: Participant[];
-}
-
-interface Vote {
-  user_id: string;
-  vote_value: string;
+  votes: Vote[];
 }
 
 const VOTE_OPTIONS = ['1', '2', '3', '5', '8', '13', '?', '☕'];
 
-export const VotingSection = ({ currentIssue, participants }: VotingSectionProps) => {
+export const VotingSection = ({ currentIssue, participants, votes }: VotingSectionProps) => {
   const { user } = useUser();
   const userId = user?.id;
-  const [votes, setVotes] = useState<Vote[]>([]);
   const [userVote, setUserVote] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const fetchVotes = async () => {
-    if (!currentIssue) return;
-    const { data, error } = await supabase
-      .from('votes')
-      .select('user_id, vote_value')
-      .eq('issue_id', currentIssue.id);
-    
-    if (error) {
-      showError("Could not fetch votes.");
-    } else {
-      setVotes(data || []);
-    }
-  };
-
   useEffect(() => {
-    setVotes([]);
     setUserVote(null);
-
-    if (currentIssue) {
-      fetchVotes();
-    }
-
     if (currentIssue && userId) {
-      const fetchUserVote = async () => {
-        const { data } = await supabase
-          .from('votes')
-          .select('vote_value')
-          .eq('issue_id', currentIssue.id)
-          .eq('user_id', userId)
-          .single();
-        if (data) {
-          setUserVote(data.vote_value);
-        }
-      };
-      fetchUserVote();
+      const foundVote = votes.find(v => v.user_id === userId);
+      setUserVote(foundVote ? foundVote.vote_value : null);
     }
-  }, [currentIssue, userId]);
-
-  useEffect(() => {
-    if (!currentIssue) return;
-
-    const channel = supabase
-      .channel(`votes:${currentIssue.id}`)
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'votes', filter: `issue_id=eq.${currentIssue.id}` },
-        (payload) => {
-          fetchVotes();
-          if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
-              const newVote = payload.new as Vote;
-              if (newVote.user_id === userId) {
-                  setUserVote(newVote.vote_value);
-              }
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [currentIssue, userId]);
-
+  }, [currentIssue, userId, votes]);
 
   const handleVote = async (value: string) => {
     if (!currentIssue || !userId || isSubmitting) return;
@@ -103,7 +42,6 @@ export const VotingSection = ({ currentIssue, participants }: VotingSectionProps
 
     if (error) {
       showError('Failed to cast vote.');
-      console.error(error);
     } else {
       setUserVote(value);
     }
@@ -116,63 +54,52 @@ export const VotingSection = ({ currentIssue, participants }: VotingSectionProps
       .from('issues')
       .update({ votes_revealed: true })
       .eq('id', currentIssue.id);
-    
-    if (error) {
-      showError("Failed to reveal votes.");
-    } else {
-        fetchVotes();
-    }
+    if (error) showError("Failed to reveal votes.");
   };
   
   const handleResetVoting = async () => {
     if (!currentIssue) return;
-    const { error: deleteError } = await supabase
-      .from('votes')
-      .delete()
-      .eq('issue_id', currentIssue.id);
-
-    if (deleteError) {
-        showError("Failed to clear previous votes.");
-        return;
-    }
-
-    const { error: updateError } = await supabase
-      .from('issues')
-      .update({ votes_revealed: false })
-      .eq('id', currentIssue.id);
-
-    if (updateError) {
-        showError("Failed to reset voting state.");
-    } else {
-        setVotes([]);
-        setUserVote(null);
-        showSuccess("Voting has been reset for this issue.");
-    }
+    await supabase.from('votes').delete().eq('issue_id', currentIssue.id);
+    const { error } = await supabase.from('issues').update({ votes_revealed: false }).eq('id', currentIssue.id);
+    if (error) showError("Failed to reset voting state.");
+    else showSuccess("Voting has been reset.");
   };
 
   const handleSetFinalVote = async (voteValue: string) => {
     if (!currentIssue) return;
-
     const { error } = await supabase
       .from('issues')
       .update({ final_vote: voteValue, is_voting: false })
       .eq('id', currentIssue.id);
-
-    if (error) {
-      showError("Failed to set final estimate.");
-    } else {
-      showSuccess(`Estimate set to ${voteValue}.`);
-    }
+    if (error) showError("Failed to set final estimate.");
+    else showSuccess(`Estimate set to ${voteValue}.`);
   };
 
+  const voteResults = useMemo(() => {
+    if (!currentIssue?.votes_revealed || votes.length === 0) {
+      return { average: 0, consensus: false };
+    }
+    const numericVotes = votes
+      .map(v => parseInt(v.vote_value, 10))
+      .filter(v => !isNaN(v));
+
+    if (numericVotes.length === 0) {
+      return { average: 0, consensus: true };
+    }
+
+    const sum = numericVotes.reduce((acc, val) => acc + val, 0);
+    const average = sum / numericVotes.length;
+    const consensus = new Set(numericVotes).size === 1;
+
+    return { average: parseFloat(average.toFixed(2)), consensus };
+  }, [currentIssue, votes]);
 
   if (!currentIssue) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
         <div className="bg-card p-8 rounded-lg shadow-lg max-w-md">
-          <h3 className="text-xl font-semibold mb-2">Feeling lonely? 😔</h3>
-          <p className="text-muted-foreground mb-4">Invite players to join the game!</p>
-          <p className="text-muted-foreground">Once you have issues, select one from the sidebar to start voting.</p>
+          <h3 className="text-xl font-semibold mb-2">Ready to estimate!</h3>
+          <p className="text-muted-foreground">Select an issue from the sidebar to start voting.</p>
         </div>
       </div>
     );
@@ -213,14 +140,28 @@ export const VotingSection = ({ currentIssue, participants }: VotingSectionProps
 
       <div className="mt-8">
         {currentIssue.votes_revealed ? (
-          <div className="text-center space-y-4">
-            <p className="text-sm font-medium">Set Final Estimate</p>
-            <div className="flex flex-wrap gap-2 justify-center">
-              {VOTE_OPTIONS.map((value) => (
-                <Button key={value} variant="outline" onClick={() => handleSetFinalVote(value)}>
-                  {value}
-                </Button>
-              ))}
+          <div className="text-center space-y-4 bg-card p-4 rounded-lg">
+            <div className="flex justify-around items-center">
+              <div>
+                <p className="text-sm text-muted-foreground">Average</p>
+                <p className="text-2xl font-bold">{voteResults.average}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Consensus</p>
+                <p className={`text-2xl font-bold ${voteResults.consensus ? 'text-green-500' : 'text-destructive'}`}>
+                  {voteResults.consensus ? 'Yes' : 'No'}
+                </p>
+              </div>
+            </div>
+            <div className="pt-4 border-t">
+              <p className="text-sm font-medium mb-2">Set Final Estimate</p>
+              <div className="flex flex-wrap gap-2 justify-center">
+                {VOTE_OPTIONS.map((value) => (
+                  <Button key={value} variant="outline" size="sm" onClick={() => handleSetFinalVote(value)}>
+                    {value}
+                  </Button>
+                ))}
+              </div>
             </div>
           </div>
         ) : (
@@ -244,9 +185,9 @@ export const VotingSection = ({ currentIssue, participants }: VotingSectionProps
         
         <div className="flex justify-center gap-4 pt-6 mt-6 border-t border-border">
             {!currentIssue.votes_revealed ? (
-                <Button onClick={handleRevealVotes} size="lg">Reveal Votes</Button>
+                <Button onClick={handleRevealVotes} size="lg">Show Votes</Button>
             ) : (
-                <Button onClick={handleResetVoting} variant="secondary">Vote Again</Button>
+                <Button onClick={handleResetVoting} variant="secondary">Clear Votes</Button>
             )}
         </div>
       </div>
