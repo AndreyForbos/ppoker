@@ -12,7 +12,6 @@ interface VotingSectionProps {
 }
 
 interface Vote {
-  id: number;
   user_id: string;
   vote_value: string;
 }
@@ -29,7 +28,7 @@ export const VotingSection = ({ currentIssue }: VotingSectionProps) => {
     if (!currentIssue) return;
     const { data, error } = await supabase
       .from('votes')
-      .select('id, user_id, vote_value')
+      .select('user_id, vote_value')
       .eq('issue_id', currentIssue.id);
     
     if (error) {
@@ -193,7 +192,7 @@ export const VotingSection = ({ currentIssue }: VotingSectionProps) => {
             {votes.length > 0 ? (
                 <div className="flex flex-wrap gap-2">
                     {votes.map((vote) => (
-                        <div key={vote.id} className="bg-primary text-primary-foreground rounded-md w-12 h-12 flex items-center justify-center text-lg font-bold">
+                        <div key={vote.user_id} className="bg-primary text-primary-foreground rounded-md w-12 h-12 flex items-center justify-center text-lg font-bold">
                             {vote.vote_value}
                         </div>
                     ))}
