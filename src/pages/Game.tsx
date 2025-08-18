@@ -17,6 +17,7 @@ export interface Issue {
   game_id: string;
   is_voting: boolean;
   votes_revealed: boolean;
+  final_vote: string | null;
 }
 
 export interface Participant {

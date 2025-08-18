@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Issue } from '@/pages/Game';
 
 interface IssueListProps {
@@ -35,14 +36,21 @@ export const IssueList = ({ issues, loading, currentIssueId, onSetCurrentIssue }
                 }`}
               >
                 <span>{issue.title}</span>
-                <Button 
-                  size="sm" 
-                  variant={issue.id === currentIssueId ? "default" : "outline"}
-                  onClick={() => onSetCurrentIssue(issue.id)}
-                  disabled={!!currentIssueId && currentIssueId !== issue.id}
-                >
-                  {issue.id === currentIssueId ? 'Voting...' : 'Start Voting'}
-                </Button>
+                <div className="flex items-center gap-2">
+                  {issue.final_vote && (
+                    <Badge variant="secondary">{issue.final_vote}</Badge>
+                  )}
+                  <Button 
+                    size="sm" 
+                    variant={issue.id === currentIssueId ? "default" : "outline"}
+                    onClick={() => onSetCurrentIssue(issue.id)}
+                    disabled={
+                      (!!currentIssueId && currentIssueId !== issue.id) || !!issue.final_vote
+                    }
+                  >
+                    {issue.id === currentIssueId ? 'Voting...' : (issue.final_vote ? 'Estimated' : 'Start Voting')}
+                  </Button>
+                </div>
               </li>
             ))}
           </ul>

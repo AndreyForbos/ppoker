@@ -151,6 +151,21 @@ export const VotingSection = ({ currentIssue, participants }: VotingSectionProps
     }
   };
 
+  const handleSetFinalVote = async (voteValue: string) => {
+    if (!currentIssue) return;
+
+    const { error } = await supabase
+      .from('issues')
+      .update({ final_vote: voteValue, is_voting: false })
+      .eq('id', currentIssue.id);
+
+    if (error) {
+      showError("Failed to set final estimate.");
+    } else {
+      showSuccess(`Estimate set to ${voteValue}.`);
+    }
+  };
+
 
   if (!currentIssue) {
     return (
@@ -224,6 +239,20 @@ export const VotingSection = ({ currentIssue, participants }: VotingSectionProps
             ) : (
                 <p className="text-muted-foreground">No votes were cast.</p>
             )}
+            <div className="pt-6 mt-6 border-t">
+              <p className="mb-4 text-sm font-medium">Set Final Estimate</p>
+              <div className="flex flex-wrap gap-2">
+                {VOTE_OPTIONS.map((value) => (
+                  <Button
+                    key={value}
+                    variant="outline"
+                    onClick={() => handleSetFinalVote(value)}
+                  >
+                    {value}
+                  </Button>
+                ))}
+              </div>
+            </div>
           </div>
         )}
 
