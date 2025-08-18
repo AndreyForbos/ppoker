@@ -152,11 +152,11 @@ const Game = () => {
   return (
     <div className="h-screen w-screen flex flex-col bg-background text-foreground">
       <Header gameId={gameId} />
-      <div className="flex flex-1 overflow-hidden">
-        <main className="flex-1 flex flex-col p-4 md:p-8">
+      <div className="flex flex-col lg:flex-row flex-1 overflow-hidden">
+        <main className="flex-1 flex flex-col overflow-y-auto">
           <VotingSection currentIssue={currentIssue} participants={participants} votes={votes} />
         </main>
-        <aside className="hidden lg:flex w-full lg:w-[350px] xl:w-[400px] bg-[#1e2332] border-l border-border p-6 flex-col flex-shrink-0">
+        <aside className="w-full lg:w-[350px] xl:w-[400px] bg-[#1e2332] border-t lg:border-t-0 lg:border-l border-border p-6 flex flex-col flex-shrink-0">
           <div className="flex-1 space-y-6 overflow-y-auto">
             <ParticipantsList participants={participants} votes={votes} />
             <CreateIssueForm gameId={gameId} />
