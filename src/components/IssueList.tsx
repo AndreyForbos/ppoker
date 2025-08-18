@@ -1,13 +1,16 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
 import { Issue } from '@/pages/Game';
 
 interface IssueListProps {
   issues: Issue[];
   loading: boolean;
+  currentIssueId: number | undefined;
+  onSetCurrentIssue: (issueId: number) => void;
 }
 
-export const IssueList = ({ issues, loading }: IssueListProps) => {
+export const IssueList = ({ issues, loading, currentIssueId, onSetCurrentIssue }: IssueListProps) => {
   return (
     <Card>
       <CardHeader>
@@ -25,8 +28,21 @@ export const IssueList = ({ issues, loading }: IssueListProps) => {
         ) : (
           <ul className="space-y-2">
             {issues.map((issue) => (
-              <li key={issue.id} className="p-3 bg-secondary rounded-md">
-                {issue.title}
+              <li 
+                key={issue.id} 
+                className={`p-3 rounded-md flex justify-between items-center transition-all ${
+                  issue.id === currentIssueId ? 'bg-primary/10 ring-2 ring-primary' : 'bg-secondary'
+                }`}
+              >
+                <span>{issue.title}</span>
+                <Button 
+                  size="sm" 
+                  variant={issue.id === currentIssueId ? "default" : "outline"}
+                  onClick={() => onSetCurrentIssue(issue.id)}
+                  disabled={!!currentIssueId && currentIssueId !== issue.id}
+                >
+                  {issue.id === currentIssueId ? 'Voting...' : 'Start Voting'}
+                </Button>
               </li>
             ))}
           </ul>
