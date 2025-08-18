@@ -9,9 +9,10 @@ import { Player } from "@/types";
 
 interface PlayerListProps {
   players: Player[];
+  votesRevealed: boolean;
 }
 
-export const PlayerList = ({ players }: PlayerListProps) => {
+export const PlayerList = ({ players, votesRevealed }: PlayerListProps) => {
   return (
     <Card>
       <CardHeader>
@@ -28,8 +29,12 @@ export const PlayerList = ({ players }: PlayerListProps) => {
                 <User className="h-5 w-5 text-gray-500" />
                 <span className="font-medium">{player.name}</span>
               </div>
-              {player.vote && (
-                <CheckCircle2 className="h-5 w-5 text-green-500" />
+              {votesRevealed ? (
+                <span className="font-bold text-lg">{player.vote || "🤔"}</span>
+              ) : (
+                player.vote && (
+                  <CheckCircle2 className="h-5 w-5 text-green-500" />
+                )
               )}
             </li>
           ))}

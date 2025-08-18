@@ -1,17 +1,20 @@
-import { useState } from "react";
 import { PokerCard } from "./PokerCard";
 
 const cardValues = ["0", "1", "2", "3", "5", "8", "13", "21", "?"];
 
 interface CardDeckProps {
   onVote: (value: string) => void;
+  selectedCard: string | null;
+  disabled?: boolean;
 }
 
-export const CardDeck = ({ onVote }: CardDeckProps) => {
-  const [selectedCard, setSelectedCard] = useState<string | null>(null);
-
+export const CardDeck = ({
+  onVote,
+  selectedCard,
+  disabled = false,
+}: CardDeckProps) => {
   const handleSelectCard = (value: string) => {
-    setSelectedCard(value);
+    if (disabled) return;
     onVote(value);
   };
 
@@ -25,6 +28,7 @@ export const CardDeck = ({ onVote }: CardDeckProps) => {
             value={value}
             isSelected={selectedCard === value}
             onSelect={handleSelectCard}
+            disabled={disabled}
           />
         ))}
       </div>
