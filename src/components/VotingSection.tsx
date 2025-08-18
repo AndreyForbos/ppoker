@@ -5,10 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Issue } from '@/pages/Game';
 import { useUser } from '@/hooks/useUser';
 import { showError, showSuccess } from '@/utils/toast';
+import { Check } from 'lucide-react';
 
 interface VotingSectionProps {
   currentIssue: Issue | undefined;
-  gameId: string;
 }
 
 interface Vote {
@@ -42,6 +42,10 @@ export const VotingSection = ({ currentIssue }: VotingSectionProps) => {
     setVotes([]);
     setUserVote(null);
 
+    if (currentIssue) {
+      fetchVotes();
+    }
+
     if (currentIssue && userId) {
       const fetchUserVote = async () => {
         const { data } = await supabase
@@ -56,11 +60,6 @@ export const VotingSection = ({ currentIssue }: VotingSectionProps) => {
       };
       fetchUserVote();
     }
-    
-    if (currentIssue?.votes_revealed) {
-        fetchVotes();
-    }
-
   }, [currentIssue, userId]);
 
   useEffect(() => {
@@ -72,9 +71,7 @@ export const VotingSection = ({ currentIssue }: VotingSectionProps) => {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'votes', filter: `issue_id=eq.${currentIssue.id}` },
         (payload) => {
-          if (currentIssue.votes_revealed) {
-            fetchVotes();
-          }
+          fetchVotes();
           if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
               const newVote = payload.new as Vote;
               if (newVote.user_id === userId) {
@@ -170,22 +167,39 @@ export const VotingSection = ({ currentIssue }: VotingSectionProps) => {
       </CardHeader>
       <CardContent className="space-y-6">
         {!currentIssue.votes_revealed ? (
-          <div>
-            <p className="mb-4 text-sm text-muted-foreground">Choose your estimate:</p>
-            <div className="grid grid-cols-4 md:grid-cols-8 gap-2">
-              {VOTE_OPTIONS.map((value) => (
-                <Button
-                  key={value}
-                  variant={userVote === value ? 'default' : 'outline'}
-                  onClick={() => handleVote(value)}
-                  className="aspect-square text-lg font-bold"
-                  disabled={isSubmitting}
-                >
-                  {value}
-                </Button>
-              ))}
+          <>
+            <div>
+              <p className="mb-2 text-sm font-medium">Participants ({votes.length} voted)</p>
+              <div className="flex flex-wrap gap-3 min-h-[7rem]">
+                {votes.map((vote) => (
+                  <div
+                    key={vote.user_id}
+                    className="bg-secondary rounded-lg w-20 h-24 flex items-center justify-center border-2 border-dashed"
+                  >
+                    {vote.user_id === userId && (
+                      <Check className="h-8 w-8 text-primary" />
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
+            <div>
+              <p className="mb-4 text-sm text-muted-foreground">Choose your estimate:</p>
+              <div className="grid grid-cols-4 md:grid-cols-8 gap-2">
+                {VOTE_OPTIONS.map((value) => (
+                  <Button
+                    key={value}
+                    variant={userVote === value ? 'default' : 'outline'}
+                    onClick={() => handleVote(value)}
+                    className="aspect-square text-lg font-bold"
+                    disabled={isSubmitting}
+                  >
+                    {value}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </>
         ) : (
           <div>
             <p className="mb-4 text-sm text-muted-foreground">Votes:</p>

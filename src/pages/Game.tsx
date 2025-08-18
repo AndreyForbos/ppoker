@@ -121,7 +121,7 @@ const Game = () => {
       <Header gameId={gameId} />
       <main className="p-4 md:p-8 max-w-4xl mx-auto">
         <div className="space-y-8">
-          <VotingSection currentIssue={currentIssue} gameId={gameId} />
+          <VotingSection currentIssue={currentIssue} />
           <CreateIssueForm gameId={gameId} />
           <IssueList 
             issues={issues} 
