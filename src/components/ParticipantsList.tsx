@@ -5,15 +5,18 @@ import { CheckCircle2 } from 'lucide-react';
 interface ParticipantsListProps {
   participants: Participant[];
   votes: Vote[];
+  showVoteCount?: boolean;
 }
 
-export const ParticipantsList = ({ participants, votes }: ParticipantsListProps) => {
+export const ParticipantsList = ({ participants, votes, showVoteCount = false }: ParticipantsListProps) => {
   const votedParticipantIds = new Set(votes.map(v => v.user_id));
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Players ({votedParticipantIds.size}/{participants.length})</CardTitle>
+        <CardTitle>
+          Players ({showVoteCount ? `${votedParticipantIds.size}/` : ''}{participants.length})
+        </CardTitle>
       </CardHeader>
       <CardContent>
         {participants.length === 0 ? (
