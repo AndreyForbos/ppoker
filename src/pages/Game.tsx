@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { showError, showSuccess } from '@/utils/toast';
 import { Header } from '@/components/Header';
 import { VotingSection } from '@/components/VotingSection';
-import { useUser } from '@/hooks/useUser';
+import { useUser } from '@/context/UserContext';
 import { UserSetup } from '@/components/UserSetup';
 import { IssuesDrawer } from '@/components/IssuesDrawer';
 import { GameLobby } from '@/components/GameLobby';
@@ -34,7 +34,7 @@ const Game = () => {
   const [issues, setIssues] = useState<Issue[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentIssue, setCurrentIssue] = useState<Issue | undefined>(undefined);
-  const { user, setUserName } = useUser();
+  const { user, setUserName, loading: userLoading } = useUser();
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [votes, setVotes] = useState<Vote[]>([]);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -116,11 +116,13 @@ const Game = () => {
     channel
       .on('presence', { event: 'sync' }, () => {
         const presenceState = channel.presenceState();
-        const newParticipants: Participant[] = Object.keys(presenceState).map(key => ({
-          id: key,
-          // @ts-ignore
-          name: presenceState[key][0].name,
-        }));
+        const newParticipants: Participant[] = Object.keys(presenceState).map(key => {
+          const presences = presenceState[key] as { name: string }[];
+          return {
+            id: key,
+            name: presences[0].name,
+          };
+        });
         setParticipants(newParticipants);
       })
       .subscribe(async (status) => {
@@ -219,7 +221,8 @@ const Game = () => {
     setIsDrawerOpen(false);
   };
 
-  if (!user) return <div className="min-h-screen flex items-center justify-center"><p>Loading user...</p></div>;
+  if (userLoading) return <div className="min-h-screen flex items-center justify-center"><p>Loading user...</p></div>;
+  if (!user) return <div className="min-h-screen flex items-center justify-center"><p>Could not load user profile.</p></div>;
   if (!user.name) return <UserSetup onNameSet={(name) => setUserName(name)} />;
   if (loading && issues.length === 0) return <div className="min-h-screen flex items-center justify-center"><p>Loading game...</p></div>;
   if (!gameId) return <div className="min-h-screen flex items-center justify-center"><p>Game ID is missing.</p></div>;

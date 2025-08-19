@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Issue, Participant, Vote } from '@/pages/Game';
-import { useUser } from '@/hooks/useUser';
+import { useUser } from '@/context/UserContext';
 import { showError, showSuccess } from '@/utils/toast';
 import { Check } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
