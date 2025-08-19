@@ -2,15 +2,12 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { showError, showSuccess } from '@/utils/toast';
-import { CreateIssueForm } from '@/components/CreateIssueForm';
-import { IssueList } from '@/components/IssueList';
 import { Header } from '@/components/Header';
 import { VotingSection } from '@/components/VotingSection';
-import { SessionControls } from '@/components/SessionControls';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useUser } from '@/hooks/useUser';
 import { UserSetup } from '@/components/UserSetup';
-import { ParticipantsList } from '@/components/ParticipantsList';
+import { IssuesDrawer } from '@/components/IssuesDrawer';
+import { GameLobby } from '@/components/GameLobby';
 
 export interface Issue {
   id: number;
@@ -39,6 +36,7 @@ const Game = () => {
   const { user, setUserName } = useUser();
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [votes, setVotes] = useState<Vote[]>([]);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   const fetchIssues = async () => {
     if (!gameId) return;
@@ -137,6 +135,11 @@ const Game = () => {
     if (error) showError("Failed to start voting on issue.");
   };
 
+  const handleSetCurrentIssueAndCloseDrawer = (issueId: number) => {
+    handleSetCurrentIssue(issueId);
+    setIsDrawerOpen(false);
+  };
+
   const handleDeleteIssue = async (issueId: number) => {
     await supabase.from('votes').delete().eq('issue_id', issueId);
     const { error } = await supabase.from('issues').delete().eq('id', issueId);
@@ -151,38 +154,24 @@ const Game = () => {
 
   return (
     <div className="h-screen w-screen flex flex-col bg-background text-foreground">
-      <Header gameId={gameId} />
-      <div className="flex flex-col lg:flex-row flex-1 overflow-hidden">
-        <main className="flex-1 flex flex-col overflow-y-auto">
+      <Header gameId={gameId} onOpenDrawer={() => setIsDrawerOpen(true)} />
+      <main className="flex-1 flex flex-col overflow-y-auto">
+        {currentIssue ? (
           <VotingSection currentIssue={currentIssue} participants={participants} votes={votes} />
-        </main>
-        <aside className="w-full lg:w-[350px] xl:w-[400px] bg-[#1e2332] border-t lg:border-t-0 lg:border-l border-border p-6 flex flex-col flex-shrink-0">
-          <div className="flex-1 space-y-6 overflow-y-auto">
-            <ParticipantsList participants={participants} votes={votes} />
-            <CreateIssueForm gameId={gameId} />
-            <IssueList 
-              issues={issues} 
-              loading={loading}
-              currentIssueId={currentIssue?.id}
-              onSetCurrentIssue={handleSetCurrentIssue}
-              onDeleteIssue={handleDeleteIssue}
-            />
-          </div>
-          <div className="flex-shrink-0 mt-6">
-            <Card className="border-destructive bg-transparent shadow-none">
-              <CardHeader className="p-4">
-                  <CardTitle className="text-base">Danger Zone</CardTitle>
-              </CardHeader>
-              <CardContent className="p-4 pt-0">
-                  <p className="text-sm text-muted-foreground mb-4">
-                      Permanently delete all issues and votes for this game.
-                  </p>
-                  <SessionControls gameId={gameId} />
-              </CardContent>
-            </Card>
-          </div>
-        </aside>
-      </div>
+        ) : (
+          <GameLobby gameId={gameId} participants={participants} votes={votes} />
+        )}
+      </main>
+      <IssuesDrawer
+        isOpen={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
+        gameId={gameId}
+        issues={issues}
+        loading={loading}
+        currentIssueId={currentIssue?.id}
+        onSetCurrentIssue={handleSetCurrentIssueAndCloseDrawer}
+        onDeleteIssue={handleDeleteIssue}
+      />
     </div>
   );
 };
