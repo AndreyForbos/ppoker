@@ -62,12 +62,6 @@ export const VotingSection = ({ currentIssue, participants, votes, onStateChange
       showError("Failed to reveal votes.");
     }
   }, [currentIssue]);
-  
-  useEffect(() => {
-    if (currentIssue && !currentIssue.votes_revealed && participants.length > 0 && votes.length === participants.length) {
-      handleRevealVotes();
-    }
-  }, [votes, participants, currentIssue, handleRevealVotes]);
 
   const handleResetVoting = async () => {
     if (!currentIssue) return;
@@ -235,7 +229,14 @@ export const VotingSection = ({ currentIssue, participants, votes, onStateChange
             {currentIssue.votes_revealed ? (
                 <Button onClick={handleResetVoting} variant="secondary">New Voting</Button>
             ) : (
-              <p className="text-muted-foreground">Aguardando os outros jogadores votarem...</p>
+              <div className="flex flex-col items-center gap-4">
+                <p className="text-sm text-muted-foreground">
+                  {votes.length} of {participants.length} players have voted.
+                </p>
+                <Button onClick={handleRevealVotes} disabled={votes.length === 0}>
+                  Reveal Votes
+                </Button>
+              </div>
             )}
         </div>
       </div>
