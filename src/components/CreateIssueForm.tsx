@@ -4,12 +4,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { showError, showSuccess } from '@/utils/toast';
+import { Issue } from '@/pages/Game';
 
 interface CreateIssueFormProps {
   gameId: string;
+  onIssueCreated: (newIssue: Issue) => void;
 }
 
-export const CreateIssueForm = ({ gameId }: CreateIssueFormProps) => {
+export const CreateIssueForm = ({ gameId, onIssueCreated }: CreateIssueFormProps) => {
   const [title, setTitle] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -18,16 +20,19 @@ export const CreateIssueForm = ({ gameId }: CreateIssueFormProps) => {
     if (!title.trim()) return;
 
     setIsSubmitting(true);
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('issues')
-      .insert([{ title: title.trim(), game_id: gameId }]);
+      .insert([{ title: title.trim(), game_id: gameId }])
+      .select()
+      .single();
 
     if (error) {
       console.error('Error creating issue:', error);
       showError('Failed to create issue.');
-    } else {
+    } else if (data) {
       showSuccess('Issue created!');
       setTitle('');
+      onIssueCreated(data);
     }
     setIsSubmitting(false);
   };

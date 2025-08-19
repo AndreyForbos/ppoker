@@ -184,6 +184,17 @@ const Game = () => {
     else showSuccess('Issue deleted successfully.');
   };
 
+  const handleIssueCreated = (newIssue: Issue) => {
+    setIssues(currentIssues => {
+      if (currentIssues.some(issue => issue.id === newIssue.id)) {
+        return currentIssues;
+      }
+      const newIssues = [...currentIssues, newIssue];
+      newIssues.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+      return newIssues;
+    });
+  };
+
   if (!user) return <div className="min-h-screen flex items-center justify-center"><p>Loading user...</p></div>;
   if (!user.name) return <UserSetup onNameSet={(name) => setUserName(name)} />;
   if (loading && issues.length === 0) return <div className="min-h-screen flex items-center justify-center"><p>Loading game...</p></div>;
@@ -208,6 +219,7 @@ const Game = () => {
         currentIssueId={currentIssue?.id}
         onSetCurrentIssue={handleSetCurrentIssueAndCloseDrawer}
         onDeleteIssue={handleDeleteIssue}
+        onIssueCreated={handleIssueCreated}
       />
     </div>
   );
