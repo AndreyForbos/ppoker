@@ -41,7 +41,6 @@ const Game = () => {
 
   const fetchIssues = useCallback(async () => {
     if (!gameId) return;
-    setLoading(true);
     const { data, error } = await supabase
       .from('issues')
       .select('*')
@@ -49,40 +48,52 @@ const Game = () => {
       .order('created_at', { ascending: true });
 
     if (error) {
-      console.error('Error fetching issues:', error);
-      showError('Could not fetch issues. Check console for details.');
+      console.error('Error polling issues:', error);
     } else {
       const fetchedIssues = data || [];
       setIssues(fetchedIssues);
       const votingIssue = fetchedIssues.find(i => i.is_voting);
       setCurrentIssue(votingIssue);
     }
-    setLoading(false);
   }, [gameId]);
 
+  const fetchVotes = useCallback(async () => {
+    if (!currentIssue) {
+      setVotes([]);
+      return;
+    }
+    const { data, error } = await supabase
+      .from('votes')
+      .select('user_id, vote_value')
+      .eq('issue_id', currentIssue.id);
+    if (error) {
+      console.error("Error polling votes:", error);
+    } else {
+      setVotes(data || []);
+    }
+  }, [currentIssue]);
+
+  // Initial data fetch
   useEffect(() => {
     if (gameId) {
-      fetchIssues();
+      setLoading(true);
+      fetchIssues().finally(() => setLoading(false));
     }
   }, [gameId, fetchIssues]);
 
+  // Polling for game state changes
   useEffect(() => {
     if (!gameId) return;
-
-    const channel = supabase
-      .channel(`issues:${gameId}`)
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'issues', filter: `game_id=eq.${gameId}` },
-        () => fetchIssues()
-      )
-      .subscribe();
+    const issueInterval = setInterval(fetchIssues, 3000);
+    const voteInterval = setInterval(fetchVotes, 3000);
 
     return () => {
-      supabase.removeChannel(channel);
+      clearInterval(issueInterval);
+      clearInterval(voteInterval);
     };
-  }, [gameId, fetchIssues]);
+  }, [gameId, fetchIssues, fetchVotes]);
 
+  // Real-time presence for participants list
   useEffect(() => {
     if (!gameId || !user?.id || !user.name) return;
     const channel = supabase.channel(`game:${gameId}`, { config: { presence: { key: user.id } } });
@@ -106,50 +117,17 @@ const Game = () => {
     return () => { supabase.removeChannel(channel); };
   }, [gameId, user]);
 
-  useEffect(() => {
-    const fetchVotes = async () => {
-      if (!currentIssue) {
-        setVotes([]);
-        return;
-      }
-      const { data, error } = await supabase
-        .from('votes')
-        .select('user_id, vote_value')
-        .eq('issue_id', currentIssue.id);
-      if (error) {
-        showError("Could not fetch votes.");
-      } else {
-        setVotes(data || []);
-      }
-    };
-
-    fetchVotes();
-
-    if (!currentIssue) return;
-
-    const channel = supabase
-      .channel(`votes:${currentIssue.id}`)
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'votes', filter: `issue_id=eq.${currentIssue.id}` },
-        () => fetchVotes()
-      )
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
-  }, [currentIssue]);
-
   const handleSetCurrentIssue = async (issueId: number) => {
     if (!gameId) return;
-
     const { error } = await supabase.rpc('set_voting_issue', {
       _game_id: gameId,
       _issue_id: issueId,
     });
-
     if (error) {
       console.error('Error setting voting issue:', error);
       showError("Failed to start voting on issue.");
+    } else {
+      fetchIssues(); // Fetch immediately for faster UI response
     }
   };
 
@@ -165,13 +143,13 @@ const Game = () => {
       console.error('Error deleting votes:', votesError);
       return;
     }
-
     const { error: issueError } = await supabase.from('issues').delete().eq('id', issueId);
     if (issueError) {
       showError('Failed to delete the issue.');
       console.error('Error deleting issue:', issueError);
     } else {
       showSuccess('Issue deleted successfully.');
+      fetchIssues(); // Fetch immediately for faster UI response
     }
   };
 
