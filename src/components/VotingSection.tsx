@@ -5,6 +5,7 @@ import { Issue, Participant, Vote } from '@/pages/Game';
 import { useUser } from '@/hooks/useUser';
 import { showError, showSuccess } from '@/utils/toast';
 import { Check } from 'lucide-react';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 interface VotingSectionProps {
   currentIssue: Issue | undefined;
@@ -119,19 +120,22 @@ export const VotingSection = ({ currentIssue, participants, votes }: VotingSecti
             const hasVoted = !!vote;
 
             return (
-              <div key={participant.id} className="flex flex-col items-center w-28">
+              <div key={participant.id} className="flex flex-col items-center w-28 text-center">
                 {currentIssue.votes_revealed ? (
-                  <div className="bg-primary text-primary-foreground rounded-lg w-20 h-28 flex items-center justify-center text-3xl font-bold shadow-lg">
+                  <div className="bg-primary text-primary-foreground rounded-lg w-20 h-28 flex items-center justify-center text-3xl font-bold shadow-lg mb-3">
                     <div>
                       {vote ? vote.vote_value : <span className="text-xl text-primary-foreground/70">?</span>}
                     </div>
                   </div>
                 ) : (
-                  <div className={`rounded-lg w-20 h-28 flex items-center justify-center border-2 transition-all ${hasVoted ? 'bg-green-500/20 border-green-500' : 'bg-card border-border'}`}>
+                  <div className={`rounded-lg w-20 h-28 flex items-center justify-center border-2 transition-all mb-3 ${hasVoted ? 'bg-green-500/20 border-green-500' : 'bg-card border-border'}`}>
                     {hasVoted && <Check className="h-10 w-10 text-green-500" />}
                   </div>
                 )}
-                <span className="text-md mt-3 font-medium truncate w-full text-center">{participant.name}</span>
+                <Avatar className="mb-2">
+                  <AvatarFallback>{participant.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                </Avatar>
+                <span className="text-sm font-medium truncate w-full">{participant.name}</span>
               </div>
             );
           })}
