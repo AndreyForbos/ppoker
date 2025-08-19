@@ -166,10 +166,16 @@ const Game = () => {
 
   const handleSetCurrentIssue = async (issueId: number) => {
     if (!gameId || currentIssue?.id === issueId) return;
-    await supabase.from('issues').update({ is_voting: false }).eq('game_id', gameId);
-    await supabase.from('votes').delete().eq('issue_id', issueId);
-    const { error } = await supabase.from('issues').update({ is_voting: true, votes_revealed: false }).eq('id', issueId);
-    if (error) showError("Failed to start voting on issue.");
+    
+    const { error } = await supabase.rpc('set_voting_issue', {
+      _game_id: gameId,
+      _issue_id: issueId,
+    });
+
+    if (error) {
+      console.error('Error setting voting issue:', error);
+      showError("Failed to start voting on issue.");
+    }
   };
 
   const handleSetCurrentIssueAndCloseDrawer = (issueId: number) => {
