@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { showError, showSuccess } from '@/utils/toast';
@@ -38,7 +38,7 @@ const Game = () => {
   const [votes, setVotes] = useState<Vote[]>([]);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
-  const fetchIssues = async () => {
+  const fetchIssues = useCallback(async () => {
     if (!gameId) return;
     setLoading(true);
     const { data, error } = await supabase
@@ -57,7 +57,7 @@ const Game = () => {
       setCurrentIssue(votingIssue);
     }
     setLoading(false);
-  };
+  }, [gameId]);
 
   useEffect(() => {
     if (!gameId) return;
@@ -67,11 +67,11 @@ const Game = () => {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'issues', filter: `game_id=eq.${gameId}` },
-        () => fetchIssues()
+        fetchIssues
       )
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [gameId]);
+  }, [gameId, fetchIssues]);
 
   useEffect(() => {
     if (!gameId || !user?.id || !user.name) return;
