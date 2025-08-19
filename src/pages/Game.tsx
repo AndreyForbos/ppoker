@@ -69,43 +69,13 @@ const Game = () => {
   useEffect(() => {
     if (!gameId) return;
 
-    const handleIssueUpdate = (payload: any) => {
-      const { eventType, new: newRecord, old: oldRecord } = payload;
-
-      setIssues(currentIssues => {
-        let newIssues = [...currentIssues];
-
-        if (eventType === 'INSERT') {
-          if (!newIssues.some(issue => issue.id === newRecord.id)) {
-            newIssues.push(newRecord as Issue);
-          }
-        } else if (eventType === 'UPDATE') {
-          newIssues = newIssues.map(issue =>
-            issue.id === newRecord.id ? (newRecord as Issue) : issue
-          );
-        } else if (eventType === 'DELETE') {
-          newIssues = newIssues.filter(issue => issue.id !== oldRecord.id);
-        }
-        
-        newIssues.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-
-        const votingIssue = newIssues.find(i => i.is_voting);
-        setCurrentIssue(votingIssue);
-
-        return newIssues;
-      });
-    };
-
     const channel = supabase
       .channel(`issues:${gameId}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'issues', filter: `game_id=eq.${gameId}` },
-        handleIssueUpdate
+        () => fetchIssues()
       )
-      .on('broadcast', { event: 'refetch_issues' }, () => {
-        fetchIssues();
-      })
       .subscribe();
 
     return () => {
@@ -180,12 +150,6 @@ const Game = () => {
     if (error) {
       console.error('Error setting voting issue:', error);
       showError("Failed to start voting on issue.");
-    } else {
-      const channel = supabase.channel(`issues:${gameId}`);
-      await channel.send({
-        type: 'broadcast',
-        event: 'refetch_issues',
-      });
     }
   };
 
