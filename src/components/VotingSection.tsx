@@ -11,11 +11,12 @@ interface VotingSectionProps {
   currentIssue: Issue | undefined;
   participants: Participant[];
   votes: Vote[];
+  onStateChange: () => Promise<void>;
 }
 
 const VOTE_OPTIONS = ['1', '2', '3', '5', '8', '13', '?', '☕'];
 
-export const VotingSection = ({ currentIssue, participants, votes }: VotingSectionProps) => {
+export const VotingSection = ({ currentIssue, participants, votes, onStateChange }: VotingSectionProps) => {
   const { user } = useUser();
   const userId = user?.id;
   const [userVote, setUserVote] = useState<string | null>(null);
@@ -55,15 +56,29 @@ export const VotingSection = ({ currentIssue, participants, votes }: VotingSecti
       .from('issues')
       .update({ votes_revealed: true })
       .eq('id', currentIssue.id);
-    if (error) showError("Failed to reveal votes.");
+    if (error) {
+      showError("Failed to reveal votes.");
+    } else {
+      await onStateChange();
+    }
   };
   
   const handleResetVoting = async () => {
     if (!currentIssue) return;
-    await supabase.from('votes').delete().eq('issue_id', currentIssue.id);
-    const { error } = await supabase.from('issues').update({ votes_revealed: false }).eq('id', currentIssue.id);
-    if (error) showError("Failed to reset voting state.");
-    else showSuccess("Voting has been reset.");
+    
+    const { error: deleteError } = await supabase.from('votes').delete().eq('issue_id', currentIssue.id);
+    if (deleteError) {
+      showError("Failed to clear previous votes for reset.");
+      return;
+    }
+
+    const { error: updateError } = await supabase.from('issues').update({ votes_revealed: false }).eq('id', currentIssue.id);
+    if (updateError) {
+      showError("Failed to reset voting state.");
+    } else {
+      showSuccess("Voting has been reset.");
+      await onStateChange();
+    }
   };
 
   const handleSetFinalVote = async (voteValue: string) => {
@@ -72,8 +87,12 @@ export const VotingSection = ({ currentIssue, participants, votes }: VotingSecti
       .from('issues')
       .update({ final_vote: voteValue, is_voting: false })
       .eq('id', currentIssue.id);
-    if (error) showError("Failed to set final estimate.");
-    else showSuccess(`Estimate set to ${voteValue}.`);
+    if (error) {
+      showError("Failed to set final estimate.");
+    } else {
+      showSuccess(`Estimate set to ${voteValue}.`);
+      await onStateChange();
+    }
   };
 
   const voteResults = useMemo(() => {

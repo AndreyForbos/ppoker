@@ -213,7 +213,12 @@ const Game = () => {
       <Header gameId={gameId} onOpenDrawer={() => setIsDrawerOpen(true)} />
       <main className="flex-1 flex flex-col overflow-y-auto">
         {currentIssue ? (
-          <VotingSection currentIssue={currentIssue} participants={participants} votes={votes} />
+          <VotingSection 
+            currentIssue={currentIssue} 
+            participants={participants} 
+            votes={votes}
+            onStateChange={fetchIssues}
+          />
         ) : (
           <GameLobby gameId={gameId} participants={participants} votes={votes} />
         )}
