@@ -4,14 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { showError, showSuccess } from '@/utils/toast';
-import { Issue } from '@/pages/Game';
 
 interface CreateIssueFormProps {
   gameId: string;
-  onIssueCreated: (newIssue: Issue) => void;
 }
 
-export const CreateIssueForm = ({ gameId, onIssueCreated }: CreateIssueFormProps) => {
+export const CreateIssueForm = ({ gameId }: CreateIssueFormProps) => {
   const [title, setTitle] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -32,7 +30,6 @@ export const CreateIssueForm = ({ gameId, onIssueCreated }: CreateIssueFormProps
     } else if (data) {
       showSuccess('Issue created!');
       setTitle('');
-      onIssueCreated(data);
     }
     setIsSubmitting(false);
   };

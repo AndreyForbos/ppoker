@@ -14,7 +14,6 @@ interface IssuesDrawerProps {
   currentIssueId: number | undefined;
   onSetCurrentIssue: (issueId: number) => void;
   onDeleteIssue: (issueId: number) => void;
-  onIssueCreated: (newIssue: Issue) => void;
   onSessionCleared: () => void;
 }
 
@@ -27,7 +26,6 @@ export const IssuesDrawer = ({
   currentIssueId, 
   onSetCurrentIssue, 
   onDeleteIssue,
-  onIssueCreated,
   onSessionCleared
 }: IssuesDrawerProps) => {
   return (
@@ -38,7 +36,7 @@ export const IssuesDrawer = ({
             <DrawerTitle>Manage Session</DrawerTitle>
           </DrawerHeader>
           <div className="flex-1 space-y-6 overflow-y-auto">
-            <CreateIssueForm gameId={gameId} onIssueCreated={onIssueCreated} />
+            <CreateIssueForm gameId={gameId} />
             <IssueList
               issues={issues}
               loading={loading}

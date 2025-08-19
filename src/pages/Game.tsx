@@ -175,17 +175,6 @@ const Game = () => {
     }
   };
 
-  const handleIssueCreated = (newIssue: Issue) => {
-    setIssues(currentIssues => {
-      if (currentIssues.some(issue => issue.id === newIssue.id)) {
-        return currentIssues;
-      }
-      const newIssues = [...currentIssues, newIssue];
-      newIssues.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-      return newIssues;
-    });
-  };
-
   const handleSessionCleared = async () => {
     await fetchIssues();
     setIsDrawerOpen(false);
@@ -221,7 +210,6 @@ const Game = () => {
         currentIssueId={currentIssue?.id}
         onSetCurrentIssue={handleSetCurrentIssueAndCloseDrawer}
         onDeleteIssue={handleDeleteIssue}
-        onIssueCreated={handleIssueCreated}
         onSessionCleared={handleSessionCleared}
       />
     </div>
