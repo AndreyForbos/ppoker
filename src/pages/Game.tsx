@@ -236,7 +236,7 @@ const Game = () => {
             onStateChange={fetchIssues}
           />
         ) : (
-          <GameLobby gameId={gameId} participants={participants} votes={votes} />
+          <GameLobby gameId={gameId} participants={participants} votes={votes} issues={issues} />
         )}
       </main>
       <IssuesDrawer
