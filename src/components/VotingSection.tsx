@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -52,19 +52,23 @@ export const VotingSection = ({ currentIssue, participants, votes, onStateChange
     setIsSubmitting(false);
   };
 
-  const handleRevealVotes = async () => {
-    if (!currentIssue) return;
+  const handleRevealVotes = useCallback(async () => {
+    if (!currentIssue || currentIssue.votes_revealed) return;
     const { error } = await supabase
       .from('issues')
       .update({ votes_revealed: true })
       .eq('id', currentIssue.id);
     if (error) {
       showError("Failed to reveal votes.");
-    } else {
-      await onStateChange();
     }
-  };
+  }, [currentIssue]);
   
+  useEffect(() => {
+    if (currentIssue && !currentIssue.votes_revealed && participants.length > 0 && votes.length === participants.length) {
+      handleRevealVotes();
+    }
+  }, [votes, participants, currentIssue, handleRevealVotes]);
+
   const handleResetVoting = async () => {
     if (!currentIssue) return;
     
@@ -228,10 +232,10 @@ export const VotingSection = ({ currentIssue, participants, votes, onStateChange
         )}
         
         <div className="flex justify-center gap-4 pt-6 mt-6 border-t border-border">
-            {!currentIssue.votes_revealed ? (
-                <Button onClick={handleRevealVotes} size="lg">Reveal Cards</Button>
-            ) : (
+            {currentIssue.votes_revealed ? (
                 <Button onClick={handleResetVoting} variant="secondary">New Voting</Button>
+            ) : (
+              <p className="text-muted-foreground">Aguardando os outros jogadores votarem...</p>
             )}
         </div>
       </div>
