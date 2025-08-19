@@ -103,12 +103,15 @@ const Game = () => {
         { event: '*', schema: 'public', table: 'issues', filter: `game_id=eq.${gameId}` },
         handleIssueUpdate
       )
+      .on('broadcast', { event: 'refetch_issues' }, () => {
+        fetchIssues();
+      })
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [gameId]);
+  }, [gameId, fetchIssues]);
 
   useEffect(() => {
     if (!gameId || !user?.id || !user.name) return;
@@ -169,34 +172,20 @@ const Game = () => {
   const handleSetCurrentIssue = async (issueId: number) => {
     if (!gameId) return;
 
-    // Stop voting on any other issue in this game
-    const { error: stopError } = await supabase
-      .from('issues')
-      .update({ is_voting: false })
-      .eq('game_id', gameId)
-      .eq('is_voting', true);
+    const { error } = await supabase.rpc('set_voting_issue', {
+      _game_id: gameId,
+      _issue_id: issueId,
+    });
 
-    if (stopError) {
-      console.error('Error stopping previous voting session:', stopError);
-      showError('Could not stop the previous voting session.');
-      return;
-    }
-
-    // Clear previous votes for the target issue
-    await supabase
-      .from('votes')
-      .delete()
-      .eq('issue_id', issueId);
-
-    // Start voting on the target issue
-    const { error: startError } = await supabase
-      .from('issues')
-      .update({ is_voting: true, votes_revealed: false })
-      .eq('id', issueId);
-
-    if (startError) {
-      console.error('Error setting voting issue:', startError);
+    if (error) {
+      console.error('Error setting voting issue:', error);
       showError("Failed to start voting on issue.");
+    } else {
+      const channel = supabase.channel(`issues:${gameId}`);
+      await channel.send({
+        type: 'broadcast',
+        event: 'refetch_issues',
+      });
     }
   };
 
