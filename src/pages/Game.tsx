@@ -186,10 +186,21 @@ const Game = () => {
   };
 
   const handleDeleteIssue = async (issueId: number) => {
-    await supabase.from('votes').delete().eq('issue_id', issueId);
-    const { error } = await supabase.from('issues').delete().eq('id', issueId);
-    if (error) showError('Failed to delete the issue.');
-    else showSuccess('Issue deleted successfully.');
+    const { error: votesError } = await supabase.from('votes').delete().eq('issue_id', issueId);
+    if (votesError) {
+      showError('Failed to clear votes for the issue.');
+      console.error('Error deleting votes:', votesError);
+      return;
+    }
+
+    const { error: issueError } = await supabase.from('issues').delete().eq('id', issueId);
+    if (issueError) {
+      showError('Failed to delete the issue.');
+      console.error('Error deleting issue:', issueError);
+    } else {
+      showSuccess('Issue deleted successfully.');
+      await fetchIssues();
+    }
   };
 
   const handleIssueCreated = (newIssue: Issue) => {

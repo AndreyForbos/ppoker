@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Issue, Participant, Vote } from '@/pages/Game';
 import { useUser } from '@/hooks/useUser';
 import { showError, showSuccess } from '@/utils/toast';
@@ -21,6 +22,7 @@ export const VotingSection = ({ currentIssue, participants, votes, onStateChange
   const userId = user?.id;
   const [userVote, setUserVote] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [customVote, setCustomVote] = useState('');
 
   useEffect(() => {
     setUserVote(null);
@@ -82,7 +84,7 @@ export const VotingSection = ({ currentIssue, participants, votes, onStateChange
   };
 
   const handleSetFinalVote = async (voteValue: string) => {
-    if (!currentIssue) return;
+    if (!currentIssue || !voteValue.trim()) return;
     const { error } = await supabase
       .from('issues')
       .update({ final_vote: voteValue, is_voting: false })
@@ -91,6 +93,7 @@ export const VotingSection = ({ currentIssue, participants, votes, onStateChange
       showError("Failed to set final estimate.");
     } else {
       showSuccess(`Estimate set to ${voteValue}.`);
+      setCustomVote('');
       await onStateChange();
     }
   };
@@ -184,6 +187,24 @@ export const VotingSection = ({ currentIssue, participants, votes, onStateChange
                     {value}
                   </Button>
                 ))}
+              </div>
+              <div className="mt-4 flex flex-col sm:flex-row items-center justify-center gap-2">
+                <Button 
+                  variant="outline" 
+                  onClick={() => handleSetFinalVote(String(voteResults.average))}
+                  disabled={voteResults.average === 0}
+                >
+                  Accept Average ({voteResults.average})
+                </Button>
+                <div className="flex items-center gap-2">
+                  <Input 
+                    placeholder="Custom" 
+                    className="w-24" 
+                    value={customVote}
+                    onChange={(e) => setCustomVote(e.target.value)}
+                  />
+                  <Button onClick={() => handleSetFinalVote(customVote)} disabled={!customVote.trim()}>Set</Button>
+                </div>
               </div>
             </div>
           </div>
