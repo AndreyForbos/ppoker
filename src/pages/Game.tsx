@@ -175,6 +175,8 @@ const Game = () => {
     if (error) {
       console.error('Error setting voting issue:', error);
       showError("Failed to start voting on issue.");
+    } else {
+      await fetchIssues();
     }
   };
 
