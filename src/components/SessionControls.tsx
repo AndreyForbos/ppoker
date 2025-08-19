@@ -15,9 +15,10 @@ import { Trash2 } from 'lucide-react';
 
 interface SessionControlsProps {
   gameId: string;
+  onSessionCleared: () => void;
 }
 
-export const SessionControls = ({ gameId }: SessionControlsProps) => {
+export const SessionControls = ({ gameId, onSessionCleared }: SessionControlsProps) => {
   const handleClearSession = async () => {
     const { error } = await supabase
       .from('issues')
@@ -29,6 +30,7 @@ export const SessionControls = ({ gameId }: SessionControlsProps) => {
       showError('Failed to clear the session.');
     } else {
       showSuccess('Session has been cleared!');
+      onSessionCleared();
     }
   };
 

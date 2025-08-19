@@ -214,6 +214,11 @@ const Game = () => {
     });
   };
 
+  const handleSessionCleared = async () => {
+    await fetchIssues();
+    setIsDrawerOpen(false);
+  };
+
   if (!user) return <div className="min-h-screen flex items-center justify-center"><p>Loading user...</p></div>;
   if (!user.name) return <UserSetup onNameSet={(name) => setUserName(name)} />;
   if (loading && issues.length === 0) return <div className="min-h-screen flex items-center justify-center"><p>Loading game...</p></div>;
@@ -244,6 +249,7 @@ const Game = () => {
         onSetCurrentIssue={handleSetCurrentIssueAndCloseDrawer}
         onDeleteIssue={handleDeleteIssue}
         onIssueCreated={handleIssueCreated}
+        onSessionCleared={handleSessionCleared}
       />
     </div>
   );

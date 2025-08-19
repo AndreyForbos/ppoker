@@ -15,6 +15,7 @@ interface IssuesDrawerProps {
   onSetCurrentIssue: (issueId: number) => void;
   onDeleteIssue: (issueId: number) => void;
   onIssueCreated: (newIssue: Issue) => void;
+  onSessionCleared: () => void;
 }
 
 export const IssuesDrawer = ({ 
@@ -26,7 +27,8 @@ export const IssuesDrawer = ({
   currentIssueId, 
   onSetCurrentIssue, 
   onDeleteIssue,
-  onIssueCreated
+  onIssueCreated,
+  onSessionCleared
 }: IssuesDrawerProps) => {
   return (
     <Drawer open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -54,7 +56,7 @@ export const IssuesDrawer = ({
                 <p className="text-sm text-muted-foreground mb-4">
                   Permanently delete all issues and votes for this game.
                 </p>
-                <SessionControls gameId={gameId} />
+                <SessionControls gameId={gameId} onSessionCleared={onSessionCleared} />
               </CardContent>
             </Card>
           </div>
