@@ -167,18 +167,36 @@ const Game = () => {
   }, [currentIssue]);
 
   const handleSetCurrentIssue = async (issueId: number) => {
-    if (!gameId || currentIssue?.id === issueId) return;
-    
-    const { error } = await supabase.rpc('set_voting_issue', {
-      _game_id: gameId,
-      _issue_id: issueId,
-    });
+    if (!gameId) return;
 
-    if (error) {
-      console.error('Error setting voting issue:', error);
+    // Stop voting on any other issue in this game
+    const { error: stopError } = await supabase
+      .from('issues')
+      .update({ is_voting: false })
+      .eq('game_id', gameId)
+      .eq('is_voting', true);
+
+    if (stopError) {
+      console.error('Error stopping previous voting session:', stopError);
+      showError('Could not stop the previous voting session.');
+      return;
+    }
+
+    // Clear previous votes for the target issue
+    await supabase
+      .from('votes')
+      .delete()
+      .eq('issue_id', issueId);
+
+    // Start voting on the target issue
+    const { error: startError } = await supabase
+      .from('issues')
+      .update({ is_voting: true, votes_revealed: false })
+      .eq('id', issueId);
+
+    if (startError) {
+      console.error('Error setting voting issue:', startError);
       showError("Failed to start voting on issue.");
-    } else {
-      await fetchIssues();
     }
   };
 
@@ -201,7 +219,6 @@ const Game = () => {
       console.error('Error deleting issue:', issueError);
     } else {
       showSuccess('Issue deleted successfully.');
-      await fetchIssues();
     }
   };
 
