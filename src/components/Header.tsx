@@ -13,7 +13,7 @@ export const Header = ({ gameId, onOpenDrawer }: HeaderProps) => {
         <a href="/" className="text-xl font-bold">Planning Poker</a>
         <div className="flex items-center gap-4">
           <span className="text-sm text-muted-foreground hidden md:inline">Game ID: {gameId}</span>
-          <Button variant="outline" size="icon" onClick={onOpenDrawer}>
+          <Button variant="outline" size="icon" onClick={onOpenDrawer} className="md:hidden">
             <List className="h-4 w-4" />
           </Button>
         </div>

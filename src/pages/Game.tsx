@@ -8,6 +8,7 @@ import { useUser } from '@/context/UserContext';
 import { UserSetup } from '@/components/UserSetup';
 import { IssuesDrawer } from '@/components/IssuesDrawer';
 import { GameLobby } from '@/components/GameLobby';
+import { GameSidebar } from '@/components/GameSidebar';
 
 export interface Issue {
   id: number;
@@ -167,18 +168,29 @@ const Game = () => {
   return (
     <div className="h-screen w-screen flex flex-col bg-background text-foreground">
       <Header gameId={gameId} onOpenDrawer={() => setIsDrawerOpen(true)} />
-      <main className="flex-1 flex flex-col overflow-y-auto">
-        {currentIssue ? (
-          <VotingSection 
-            currentIssue={currentIssue} 
-            participants={participants} 
-            votes={votes}
-            onStateChange={fetchIssues}
-          />
-        ) : (
-          <GameLobby gameId={gameId} participants={participants} votes={votes} issues={issues} />
-        )}
-      </main>
+      <div className="flex-1 flex overflow-hidden">
+        <GameSidebar
+          gameId={gameId}
+          issues={issues}
+          loading={loading}
+          currentIssueId={currentIssue?.id}
+          onSetCurrentIssue={handleSetCurrentIssue}
+          onDeleteIssue={handleDeleteIssue}
+          onSessionCleared={handleSessionCleared}
+        />
+        <main className="flex-1 flex flex-col overflow-y-auto">
+          {currentIssue ? (
+            <VotingSection 
+              currentIssue={currentIssue} 
+              participants={participants} 
+              votes={votes}
+              onStateChange={fetchIssues}
+            />
+          ) : (
+            <GameLobby gameId={gameId} participants={participants} votes={votes} issues={issues} />
+          )}
+        </main>
+      </div>
       <IssuesDrawer
         isOpen={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
