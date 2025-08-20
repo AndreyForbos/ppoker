@@ -3,6 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from './ui/button';
 import { Download } from 'lucide-react';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 interface GameSummaryProps {
   issues: Issue[];
@@ -12,28 +14,25 @@ export const GameSummary = ({ issues }: GameSummaryProps) => {
   const completedIssues = issues.filter(issue => issue.final_vote !== null);
 
   const handleExport = () => {
-    const headers = ['Issue', 'Estimate'];
-    const rows = completedIssues.map(issue => [
-      // Escape double quotes by doubling them, and wrap the title in double quotes
-      `"${issue.title.replace(/"/g, '""')}"`,
-      issue.final_vote
-    ]);
+    const summaryElement = document.getElementById('summary-card');
+    if (summaryElement) {
+      html2canvas(summaryElement).then(canvas => {
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = pdf.internal.pageSize.getHeight();
+        const canvasWidth = canvas.width;
+        const canvasHeight = canvas.height;
+        const ratio = canvasWidth / canvasHeight;
+        const width = pdfWidth - 20; // with some margin
+        const height = width / ratio;
 
-    const csvContent = [
-      headers.join(','),
-      ...rows.map(row => row.join(','))
-    ].join('\n');
+        // Check if content fits on one page, if not, adjust
+        const finalHeight = height > pdfHeight - 20 ? pdfHeight - 20 : height;
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement("a");
-    if (link.download !== undefined) {
-      const url = URL.createObjectURL(blob);
-      link.setAttribute("href", url);
-      link.setAttribute("download", "planning-poker-summary.csv");
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+        pdf.addImage(imgData, 'PNG', 10, 10, width, finalHeight);
+        pdf.save('planning-poker-summary.pdf');
+      });
     }
   };
 
@@ -42,12 +41,12 @@ export const GameSummary = ({ issues }: GameSummaryProps) => {
   }
 
   return (
-    <Card>
+    <Card id="summary-card">
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Resumo da Sessão</CardTitle>
         <Button variant="outline" size="sm" onClick={handleExport}>
           <Download className="h-4 w-4 mr-2" />
-          Exportar CSV
+          Exportar PDF
         </Button>
       </CardHeader>
       <CardContent>
