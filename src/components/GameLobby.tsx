@@ -32,7 +32,7 @@ export const GameLobby = ({ gameId, participants, votes, issues }: GameLobbyProp
           </Button>
         </div>
 
-        <GameSummary issues={issues} />
+        <GameSummary issues={issues} gameId={gameId} />
 
         <ParticipantsList participants={participants} votes={votes} />
         

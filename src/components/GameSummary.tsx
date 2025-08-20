@@ -4,36 +4,64 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from './ui/button';
 import { Download } from 'lucide-react';
 import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 
 interface GameSummaryProps {
   issues: Issue[];
+  gameId: string;
 }
 
-export const GameSummary = ({ issues }: GameSummaryProps) => {
+export const GameSummary = ({ issues, gameId }: GameSummaryProps) => {
   const completedIssues = issues.filter(issue => issue.final_vote !== null);
 
   const handleExport = () => {
-    const summaryElement = document.getElementById('summary-card');
-    if (summaryElement) {
-      html2canvas(summaryElement).then(canvas => {
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF('p', 'mm', 'a4');
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = pdf.internal.pageSize.getHeight();
-        const canvasWidth = canvas.width;
-        const canvasHeight = canvas.height;
-        const ratio = canvasWidth / canvasHeight;
-        const width = pdfWidth - 20; // with some margin
-        const height = width / ratio;
+    const doc = new jsPDF();
 
-        // Check if content fits on one page, if not, adjust
-        const finalHeight = height > pdfHeight - 20 ? pdfHeight - 20 : height;
+    // Título do Documento
+    doc.setFontSize(20);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Resumo da Sessão de Planning Poker', doc.internal.pageSize.getWidth() / 2, 20, { align: 'center' });
 
-        pdf.addImage(imgData, 'PNG', 10, 10, width, finalHeight);
-        pdf.save('planning-poker-summary.pdf');
-      });
-    }
+    // ID do Jogo
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(100);
+    doc.text(`ID do Jogo: ${gameId}`, 14, 30);
+    doc.text(`Data: ${new Date().toLocaleDateString()}`, 14, 36);
+
+    // Cabeçalho da Tabela
+    let yPos = 50;
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(0);
+    doc.setFillColor(240, 240, 240);
+    doc.rect(14, yPos, 182, 8, 'F');
+    doc.text('Issue / Tarefa', 16, yPos + 6);
+    doc.text('Estimativa', 180, yPos + 6, { align: 'right' });
+    yPos += 12;
+
+    // Corpo da Tabela
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(11);
+
+    completedIssues.forEach(issue => {
+      if (yPos > 270) { // Adiciona nova página se o conteúdo estiver no final
+        doc.addPage();
+        yPos = 20;
+      }
+
+      const titleLines = doc.splitTextToSize(issue.title, 140);
+      const voteText = issue.final_vote || 'N/A';
+      
+      doc.text(titleLines, 16, yPos);
+      doc.text(voteText, 180, yPos, { align: 'right' });
+
+      yPos += (titleLines.length * 5) + 6;
+      doc.setDrawColor(220, 220, 220);
+      doc.line(14, yPos - 3, 196, yPos - 3);
+    });
+
+    // Salvar o PDF
+    doc.save(`resumo-poker-${gameId}.pdf`);
   };
 
   if (completedIssues.length === 0) {
