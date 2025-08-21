@@ -10,13 +10,16 @@ import { UserProvider } from "./context/UserContext";
 
 const queryClient = new QueryClient();
 
+// IMPORTANTE: Substitua 'your-repo-name' pelo nome do seu repositório no GitHub
+const REPO_NAME = "your-repo-name";
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
       <UserProvider>
-        <BrowserRouter>
+        <BrowserRouter basename={`/${REPO_NAME}/`}>
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/game/:gameId" element={<Game />} />

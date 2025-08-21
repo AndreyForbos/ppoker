@@ -1,0 +1,69 @@
+# Fluxo de trabalho do GitHub Actions para construir e implantar o aplicativo React no GitHub Pages
+name: Deploy to GitHub Pages
+
+on:
+  # Executa em pushes direcionados ao branch principal
+  push:
+    branches:
+      - main
+
+  # Permite que você execute este fluxo de trabalho manualmente na guia Ações
+  workflow_dispatch:
+
+# Define as permissões do GITHUB_TOKEN para permitir a implantação no GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Permite apenas uma implantação simultânea, pulando as execuções enfileiradas entre a execução em andamento e a mais recente na fila.
+# No entanto, NÃO cancele as execuções em andamento, pois queremos permitir que essas implantações de produção sejam concluídas.
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build project
+        # O comando de construção precisa de acesso às suas variáveis de ambiente do Supabase.
+        # Você deve adicionar VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY como
+        # segredos do repositório nas configurações do seu repositório no GitHub.
+        run: npm run build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+
+      - name: Setup GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload build artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          # Faz o upload do diretório 'dist' que contém o site construído
+          path: "./dist"
+
+  deploy:
+    # Este trabalho depende da conclusão bem-sucedida do trabalho 'build'
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

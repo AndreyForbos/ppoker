@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Redirecting...</title>
+    <script>
+      // Este script lida com o roteamento do lado do cliente para Single Page Applications no GitHub Pages.
+      // Ele captura o caminho que o usuário estava tentando acessar e o redireciona para
+      // a raiz da aplicação com as informações do caminho em um parâmetro de consulta.
+      const path = window.location.pathname;
+      const repoName = path.split('/')[1];
+      const redirectPath = path.substring(path.indexOf('/', 1));
+
+      // Redireciona para index.html com o caminho original como um parâmetro de consulta
+      window.location.href = `/${repoName}/?redirect=${encodeURIComponent(redirectPath)}`;
+    </script>
+  </head>
+  <body>
+    <p>Se você não for redirecionado automaticamente, por favor, atualize a página.</p>
+  </body>
+</html>
