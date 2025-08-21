@@ -15,7 +15,7 @@ interface VotingSectionProps {
   onStateChange: () => Promise<void>;
 }
 
-const VOTE_OPTIONS = ['1', '2', '3', '5', '8', '13', '?', '☕'];
+const VOTE_OPTIONS = ['1', '2', '3', '5', '8', '13', '21', '34', '55', '?', '☕'];
 
 export const VotingSection = ({ currentIssue, participants, votes, onStateChange }: VotingSectionProps) => {
   const { user } = useUser();
