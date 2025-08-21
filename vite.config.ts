@@ -4,7 +4,7 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 
 // IMPORTANTE: Substitua 'your-repo-name' pelo nome do seu repositório no GitHub
-const REPO_NAME = "your-repo-name";
+const REPO_NAME = "ppoker";
 
 export default defineConfig(() => ({
   base: `/${REPO_NAME}/`,
