@@ -102,7 +102,7 @@ const Game = () => {
       .on('presence', { event: 'sync' }, () => {
         const presenceState = channel.presenceState();
         const newParticipants: Participant[] = Object.keys(presenceState).map(key => {
-          const presences = presenceState[key] as { name: string }[];
+          const presences = presenceState[key] as unknown as { name: string }[];
           return {
             id: key,
             name: presences[0].name,
