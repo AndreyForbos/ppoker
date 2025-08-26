@@ -2,15 +2,18 @@ import { createContext, useState, useEffect, useCallback, ReactNode, useContext 
 
 const USER_ID_KEY = 'planning-poker-user-id';
 const USER_NAME_KEY = 'planning-poker-user-name';
+const USER_SPECTATOR_KEY = 'planning-poker-user-spectator';
 
 export interface UserProfile {
   id: string;
   name: string | null;
+  isSpectator: boolean;
 }
 
 interface UserContextType {
   user: UserProfile | null;
   setUserName: (name: string) => void;
+  joinAsSpectator: () => void;
   loading: boolean;
 }
 
@@ -28,18 +31,27 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     }
     
     const storedUserName = localStorage.getItem(USER_NAME_KEY);
+    const storedIsSpectator = localStorage.getItem(USER_SPECTATOR_KEY) === 'true';
 
-    setUser({ id: storedUserId, name: storedUserName });
+    setUser({ id: storedUserId, name: storedUserName, isSpectator: storedIsSpectator });
     setLoading(false);
   }, []);
 
   const setUserName = useCallback((name: string) => {
     localStorage.setItem(USER_NAME_KEY, name);
-    setUser(prev => (prev ? { ...prev, name } : null));
+    localStorage.setItem(USER_SPECTATOR_KEY, 'false');
+    setUser(prev => (prev ? { ...prev, name, isSpectator: false } : null));
+  }, []);
+
+  const joinAsSpectator = useCallback(() => {
+    const spectatorName = 'Espectador';
+    localStorage.setItem(USER_NAME_KEY, spectatorName);
+    localStorage.setItem(USER_SPECTATOR_KEY, 'true');
+    setUser(prev => (prev ? { ...prev, name: spectatorName, isSpectator: true } : null));
   }, []);
 
   return (
-    <UserContext.Provider value={{ user, setUserName, loading }}>
+    <UserContext.Provider value={{ user, setUserName, joinAsSpectator, loading }}>
       {children}
     </UserContext.Provider>
   );

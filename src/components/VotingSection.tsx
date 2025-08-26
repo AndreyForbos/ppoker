@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Issue, Participant, Vote } from '@/pages/Game';
 import { useUser } from '@/context/UserContext';
 import { showError, showSuccess } from '@/utils/toast';
-import { Check } from 'lucide-react';
+import { Check, Eye } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 interface VotingSectionProps {
@@ -20,9 +20,13 @@ const VOTE_OPTIONS = ['1', '2', '3', '5', '8', '13', '21', '34', '55', '?', '☕
 export const VotingSection = ({ currentIssue, participants, votes, onStateChange }: VotingSectionProps) => {
   const { user } = useUser();
   const userId = user?.id;
+  const isSpectator = user?.isSpectator;
   const [userVote, setUserVote] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [customVote, setCustomVote] = useState('');
+
+  const players = useMemo(() => participants.filter(p => !p.isSpectator), [participants]);
+  const spectators = useMemo(() => participants.filter(p => p.isSpectator), [participants]);
 
   useEffect(() => {
     setUserVote(null);
@@ -33,7 +37,7 @@ export const VotingSection = ({ currentIssue, participants, votes, onStateChange
   }, [currentIssue, userId, votes]);
 
   const handleVote = async (value: string) => {
-    if (!currentIssue || !userId || isSubmitting) return;
+    if (!currentIssue || !userId || isSubmitting || isSpectator) return;
     setIsSubmitting(true);
 
     const { error } = await supabase
@@ -119,8 +123,8 @@ export const VotingSection = ({ currentIssue, participants, votes, onStateChange
     return (
       <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
         <div className="bg-card p-8 rounded-lg shadow-lg max-w-md">
-          <h3 className="text-xl font-semibold mb-2">Ready to estimate!</h3>
-          <p className="text-muted-foreground">Select an issue from the sidebar to start voting.</p>
+          <h3 className="text-xl font-semibold mb-2">Pronto para estimar!</h3>
+          <p className="text-muted-foreground">Selecione uma issue na barra lateral para começar a votar.</p>
         </div>
       </div>
     );
@@ -129,13 +133,13 @@ export const VotingSection = ({ currentIssue, participants, votes, onStateChange
   return (
     <div className="flex-1 flex flex-col p-4 md:p-8">
       <div className="text-center mb-8">
-        <p className="text-muted-foreground">Voting on</p>
+        <p className="text-muted-foreground">Votando em</p>
         <h2 className="text-3xl font-bold">{currentIssue.title}</h2>
       </div>
 
-      <div className="flex-1 flex items-center justify-center">
+      <div className="flex-1 flex flex-col items-center justify-center">
         <div className="flex flex-wrap gap-8 justify-center">
-          {participants.map((participant) => {
+          {players.map((participant) => {
             const vote = votes.find(v => v.user_id === participant.id);
             const hasVoted = !!vote;
 
@@ -160,25 +164,44 @@ export const VotingSection = ({ currentIssue, participants, votes, onStateChange
             );
           })}
         </div>
+        {spectators.length > 0 && (
+          <div className="mt-8 w-full max-w-md">
+            <h4 className="text-sm font-medium text-muted-foreground mb-2 text-center">Espectadores ({spectators.length})</h4>
+            <div className="flex flex-wrap gap-4 justify-center">
+              {spectators.map(spectator => (
+                <div key={spectator.id} className="flex flex-col items-center text-center">
+                  <Avatar className="mb-1">
+                    <AvatarFallback><Eye className="h-4 w-4" /></AvatarFallback>
+                  </Avatar>
+                  <span className="text-xs text-muted-foreground truncate w-20">{spectator.name}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="mt-8">
-        {currentIssue.votes_revealed ? (
+        {isSpectator ? (
+          <div className="text-center p-4 bg-card rounded-lg">
+            <p className="text-muted-foreground">Você é um espectador. Os votos serão revelados em breve.</p>
+          </div>
+        ) : currentIssue.votes_revealed ? (
           <div className="text-center space-y-4 bg-card p-4 rounded-lg">
             <div className="flex justify-around items-center">
               <div>
-                <p className="text-sm text-muted-foreground">Average</p>
+                <p className="text-sm text-muted-foreground">Média</p>
                 <p className="text-2xl font-bold">{voteResults.average}</p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Consensus</p>
+                <p className="text-sm text-muted-foreground">Consenso</p>
                 <p className={`text-2xl font-bold ${voteResults.consensus ? 'text-green-500' : 'text-destructive'}`}>
-                  {voteResults.consensus ? 'Yes' : 'No'}
+                  {voteResults.consensus ? 'Sim' : 'Não'}
                 </p>
               </div>
             </div>
             <div className="pt-4 border-t">
-              <p className="text-sm font-medium mb-2">Set Final Estimate</p>
+              <p className="text-sm font-medium mb-2">Definir Estimativa Final</p>
               <div className="flex flex-wrap gap-2 justify-center">
                 {VOTE_OPTIONS.map((value) => (
                   <Button key={value} variant="outline" size="sm" onClick={() => handleSetFinalVote(value)}>
@@ -192,7 +215,7 @@ export const VotingSection = ({ currentIssue, participants, votes, onStateChange
                   onClick={() => handleSetFinalVote(String(voteResults.average))}
                   disabled={voteResults.average === 0}
                 >
-                  Accept Average ({voteResults.average})
+                  Aceitar Média ({voteResults.average})
                 </Button>
                 <div className="flex items-center gap-2">
                   <Input 
@@ -201,14 +224,14 @@ export const VotingSection = ({ currentIssue, participants, votes, onStateChange
                     value={customVote}
                     onChange={(e) => setCustomVote(e.target.value)}
                   />
-                  <Button onClick={() => handleSetFinalVote(customVote)} disabled={!customVote.trim()}>Set</Button>
+                  <Button onClick={() => handleSetFinalVote(customVote)} disabled={!customVote.trim()}>Definir</Button>
                 </div>
               </div>
             </div>
           </div>
         ) : (
           <div className="text-center">
-            <p className="mb-4 text-lg text-muted-foreground">Pick your card!</p>
+            <p className="mb-4 text-lg text-muted-foreground">Escolha sua carta!</p>
             <div className="flex justify-center flex-wrap gap-2">
               {VOTE_OPTIONS.map((value) => (
                 <Button
@@ -227,15 +250,17 @@ export const VotingSection = ({ currentIssue, participants, votes, onStateChange
         
         <div className="flex justify-center gap-4 pt-6 mt-6 border-t border-border">
             {currentIssue.votes_revealed ? (
-                <Button onClick={handleResetVoting} variant="secondary">New Voting</Button>
+                !isSpectator && <Button onClick={handleResetVoting} variant="secondary">Nova Votação</Button>
             ) : (
               <div className="flex flex-col items-center gap-4">
                 <p className="text-sm text-muted-foreground">
-                  {votes.length} of {participants.length} players have voted.
+                  {votes.length} de {players.length} jogadores votaram.
                 </p>
-                <Button onClick={handleRevealVotes} disabled={votes.length === 0}>
-                  Reveal Votes
-                </Button>
+                {!isSpectator && (
+                  <Button onClick={handleRevealVotes} disabled={votes.length === 0}>
+                    Revelar Votos
+                  </Button>
+                )}
               </div>
             )}
         </div>

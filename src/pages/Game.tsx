@@ -23,6 +23,7 @@ export interface Issue {
 export interface Participant {
   id: string;
   name: string;
+  isSpectator: boolean;
 }
 
 export interface Vote {
@@ -35,7 +36,7 @@ const Game = () => {
   const [issues, setIssues] = useState<Issue[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentIssue, setCurrentIssue] = useState<Issue | undefined>(undefined);
-  const { user, setUserName, loading: userLoading } = useUser();
+  const { user, setUserName, joinAsSpectator, loading: userLoading } = useUser();
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [votes, setVotes] = useState<Vote[]>([]);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -102,17 +103,18 @@ const Game = () => {
       .on('presence', { event: 'sync' }, () => {
         const presenceState = channel.presenceState();
         const newParticipants: Participant[] = Object.keys(presenceState).map(key => {
-          const presences = presenceState[key] as unknown as { name: string }[];
+          const presences = presenceState[key] as unknown as { name: string, isSpectator: boolean }[];
           return {
             id: key,
             name: presences[0].name,
+            isSpectator: presences[0].isSpectator,
           };
         });
         setParticipants(newParticipants);
       })
       .subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {
-          await channel.track({ name: user.name });
+          await channel.track({ name: user.name, isSpectator: user.isSpectator });
         }
       });
     return () => { supabase.removeChannel(channel); };
@@ -161,7 +163,7 @@ const Game = () => {
 
   if (userLoading) return <div className="min-h-screen flex items-center justify-center"><p>Loading user...</p></div>;
   if (!user) return <div className="min-h-screen flex items-center justify-center"><p>Could not load user profile.</p></div>;
-  if (!user.name) return <UserSetup onNameSet={(name) => setUserName(name)} />;
+  if (!user.name) return <UserSetup onNameSet={(name) => setUserName(name)} onJoinAsSpectator={joinAsSpectator} />;
   if (loading && issues.length === 0) return <div className="min-h-screen flex items-center justify-center"><p>Loading game...</p></div>;
   if (!gameId) return <div className="min-h-screen flex items-center justify-center"><p>Game ID is missing.</p></div>;
 

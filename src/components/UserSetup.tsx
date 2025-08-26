@@ -5,9 +5,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 
 interface UserSetupProps {
   onNameSet: (name: string) => void;
+  onJoinAsSpectator: () => void;
 }
 
-export const UserSetup = ({ onNameSet }: UserSetupProps) => {
+export const UserSetup = ({ onNameSet, onJoinAsSpectator }: UserSetupProps) => {
   const [name, setName] = useState('');
 
   const handleSubmit = () => {
@@ -20,15 +21,15 @@ export const UserSetup = ({ onNameSet }: UserSetupProps) => {
     <Dialog open={true}>
       <DialogContent className="sm:max-w-[425px]" onInteractOutside={(e) => e.preventDefault()}>
         <DialogHeader>
-          <DialogTitle>Welcome!</DialogTitle>
+          <DialogTitle>Bem-vindo!</DialogTitle>
           <DialogDescription>
-            Please enter your name to join the game.
+            Por favor, insira seu nome para entrar no jogo ou entre como espectador.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <Input
             id="name"
-            placeholder="Your Name"
+            placeholder="Seu Nome"
             value={name}
             onChange={(e) => setName(e.target.value)}
             onKeyDown={(e) => {
@@ -39,8 +40,9 @@ export const UserSetup = ({ onNameSet }: UserSetupProps) => {
             }}
           />
         </div>
-        <DialogFooter>
-          <Button onClick={handleSubmit} disabled={!name.trim()}>Join Game</Button>
+        <DialogFooter className="sm:justify-between">
+          <Button onClick={onJoinAsSpectator} variant="ghost">Entrar como Espectador</Button>
+          <Button onClick={handleSubmit} disabled={!name.trim()}>Entrar no Jogo</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
