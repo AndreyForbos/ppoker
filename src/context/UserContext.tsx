@@ -2,15 +2,20 @@ import { createContext, useState, useEffect, useCallback, ReactNode, useContext 
 
 const USER_ID_KEY = 'planning-poker-user-id';
 const USER_NAME_KEY = 'planning-poker-user-name';
+const USER_ROLE_KEY = 'planning-poker-user-role';
+
+export type UserRole = 'player' | 'spectator';
 
 export interface UserProfile {
   id: string;
   name: string | null;
+  role: UserRole | null;
 }
 
 interface UserContextType {
   user: UserProfile | null;
   setUserName: (name: string) => void;
+  setUserAsSpectator: () => void;
   loading: boolean;
 }
 
@@ -28,18 +33,26 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     }
     
     const storedUserName = localStorage.getItem(USER_NAME_KEY);
+    const storedUserRole = localStorage.getItem(USER_ROLE_KEY) as UserRole | null;
 
-    setUser({ id: storedUserId, name: storedUserName });
+    setUser({ id: storedUserId, name: storedUserName, role: storedUserRole });
     setLoading(false);
   }, []);
 
   const setUserName = useCallback((name: string) => {
     localStorage.setItem(USER_NAME_KEY, name);
-    setUser(prev => (prev ? { ...prev, name } : null));
+    localStorage.setItem(USER_ROLE_KEY, 'player');
+    setUser(prev => (prev ? { ...prev, name, role: 'player' } : null));
+  }, []);
+
+  const setUserAsSpectator = useCallback(() => {
+    localStorage.removeItem(USER_NAME_KEY);
+    localStorage.setItem(USER_ROLE_KEY, 'spectator');
+    setUser(prev => (prev ? { ...prev, name: null, role: 'spectator' } : null));
   }, []);
 
   return (
-    <UserContext.Provider value={{ user, setUserName, loading }}>
+    <UserContext.Provider value={{ user, setUserName, setUserAsSpectator, loading }}>
       {children}
     </UserContext.Provider>
   );
